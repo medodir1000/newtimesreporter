@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-white text-news-black font-sans antialiased;
+}
+
+a {
+  @apply transition-colors duration-200;
+}
+
+.article-copy p {
+  @apply mb-6 text-[1.06rem] leading-8 text-zinc-700;
+}
+
+/* Breaking news ticker — CSS only (no JS animation library) */
+.ntr-ticker {
+  overflow: hidden;
+}
+
+.ntr-ticker-track {
+  display: inline-flex;
+  gap: 2rem;
+  width: max-content;
+  white-space: nowrap;
+  animation: ntr-ticker-marquee 24s linear infinite;
+}
+
+@keyframes ntr-ticker-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ntr-ticker-track {
+    animation: none;
+  }
+}
