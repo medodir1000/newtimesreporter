@@ -8,6 +8,7 @@ type LatestNewsItem = {
   title: string;
   image: string;
   time: string;
+  category?: string;
 };
 
 type TrendingItem = {
@@ -48,6 +49,11 @@ export function Sidebar({ latestNews, mostRead, trendingNow }: SidebarProps) {
                 />
               </div>
               <div>
+                {item.category && (
+                  <span className="inline-block rounded bg-news-red/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-news-red">
+                    {item.category}
+                  </span>
+                )}
                 <Link href={`/article/${item.slug}`} className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-800 hover:text-news-red">
                   {item.title}
                 </Link>

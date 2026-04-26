@@ -3,8 +3,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
+import { getHomepageArticles } from "@/lib/articles";
 import { blurPlaceholderDataURL, unsplashCard } from "@/lib/images";
-import { articles, categories, tickerItems } from "@/lib/mockData";
+import { categories, tickerItems } from "@/lib/mockData";
 
 type CategoryPageProps = {
   params: Promise<{
@@ -16,6 +17,8 @@ export function generateStaticParams() {
   return categories.map((category) => ({ slug: category.slug }));
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
   const category = categories.find((item) => item.slug === slug);
@@ -25,7 +28,8 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     notFound();
   }
 
-  const categoryArticles = articles.filter((article) => article.category.toLowerCase() === category.label.toLowerCase());
+  const allArticles = await getHomepageArticles(100);
+  const categoryArticles = allArticles.filter((article) => article.category.toLowerCase() === category.label.toLowerCase());
 
   return (
     <main>

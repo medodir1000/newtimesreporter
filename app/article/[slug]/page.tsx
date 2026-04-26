@@ -10,8 +10,8 @@ import { MustReadCard } from "@/components/MustReadCard";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
 import { blurPlaceholderDataURL, unsplashArticle } from "@/lib/images";
-import { getArticleBySlug, getRelatedArticles } from "@/lib/articles";
-import { articles, latestNews, mostRead, tickerItems, trendingNow } from "@/lib/mockData";
+import { getArticleBySlug, getHomepageArticles, getRelatedArticles } from "@/lib/articles";
+import { articles, tickerItems } from "@/lib/mockData";
 
 type ArticlePageProps = {
   params: Promise<{
@@ -34,20 +34,22 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     };
   }
 
-  const description = article.content[0] ?? article.caption;
+  const description = article.seoDescription ?? article.content[0] ?? article.caption;
 
   return {
-    title: article.title,
+    title: article.seoTitle ?? article.title,
     description,
+    keywords: article.seoKeywords,
+    alternates: article.canonicalUrl ? { canonical: article.canonicalUrl } : undefined,
     openGraph: {
-      title: article.title,
+      title: article.seoTitle ?? article.title,
       description,
       type: "article",
       images: [{ url: article.image, alt: article.title }]
     },
     twitter: {
       card: "summary_large_image",
-      title: article.title,
+      title: article.seoTitle ?? article.title,
       description,
       images: [article.image]
     }
@@ -58,6 +60,21 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params;
   const articleData = await getArticleBySlug(slug);
   const relatedArticles = await getRelatedArticles(slug, 3);
+  const sidebarPool = (await getHomepageArticles(20)).filter((item) => item.slug !== slug);
+  const latestNews = sidebarPool.slice(0, 3).map((item) => ({
+    slug: item.slug,
+    title: item.title,
+    category: item.category,
+    image: item.image,
+    time: item.date
+  }));
+  const mostRead = sidebarPool.slice(0, 5).map((item) => item.title);
+  const trendingNow = sidebarPool.slice(0, 3).map((item) => ({
+    slug: item.slug,
+    category: item.category,
+    title: item.title,
+    time: `${Math.max(3, Math.ceil(item.content.join(" ").split(/\s+/).filter(Boolean).length / 220))} min read`
+  }));
   const blurDataURL = blurPlaceholderDataURL();
 
   if (!articleData) {
@@ -65,7 +82,27 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   }
 
   const articleUrl = `https://newtimesreporter.com/article/${articleData.slug}`;
-  const words = articleData.content.join(" ").trim().split(/\s+/).filter(Boolean).length;
+  const contentBlocks = articleData.content
+    .map((paragraph) => {
+      const markdownImageMatch = paragraph.match(/^!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)$/i);
+      if (markdownImageMatch) {
+        return { type: "image" as const, url: markdownImageMatch[1] };
+      }
+      const shortcodeMatch = paragraph.match(/^\[image\](https?:\/\/.+)\[\/image\]$/i);
+      if (shortcodeMatch) {
+        return { type: "image" as const, url: shortcodeMatch[1].trim() };
+      }
+      return { type: "text" as const, text: paragraph };
+    })
+    .filter((block) => (block.type === "text" ? block.text.trim().length > 0 : block.url.trim().length > 0));
+
+  const words = contentBlocks
+    .filter((block) => block.type === "text")
+    .map((block) => (block.type === "text" ? block.text : ""))
+    .join(" ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
   const readingTime = Math.max(1, Math.ceil(words / 220));
   const jsonLd = {
     "@context": "https://schema.org",
@@ -93,7 +130,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       "@id": articleUrl
     },
     articleSection: articleData.category,
-    description: articleData.content[0] ?? articleData.caption
+    description: articleData.seoDescription ?? articleData.content[0] ?? articleData.caption
   };
 
   return (
@@ -134,15 +171,33 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {[Facebook, Twitter, Linkedin].map((Icon, index) => (
-                  <button
-                    key={index}
-                    type="button"
+                {[
+                  {
+                    Icon: Facebook,
+                    href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`,
+                    label: "Share on Facebook"
+                  },
+                  {
+                    Icon: Twitter,
+                    href: `https://twitter.com/intent/tweet?url=${encodeURIComponent(articleUrl)}&text=${encodeURIComponent(articleData.title)}`,
+                    label: "Share on Twitter"
+                  },
+                  {
+                    Icon: Linkedin,
+                    href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(articleUrl)}`,
+                    label: "Share on LinkedIn"
+                  }
+                ].map(({ Icon, href, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="rounded-full border border-zinc-300 p-2 text-zinc-700 transition hover:border-news-red hover:text-news-red"
-                    aria-label="share article"
+                    aria-label={label}
                   >
                     <Icon size={16} />
-                  </button>
+                  </a>
                 ))}
               </div>
             </div>
@@ -171,10 +226,29 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             </div>
 
             <div className="article-copy mt-10">
-              {articleData.content.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
+              {contentBlocks.map((block, index) =>
+                block.type === "text" ? (
+                  <p key={`text-${index}`}>{block.text}</p>
+                ) : (
+                  <figure key={`image-${index}`} className="my-8 overflow-hidden rounded-xl border border-zinc-200 bg-white">
+                    <img src={block.url} alt={`Article image ${index + 1}`} className="h-auto w-full object-cover" />
+                  </figure>
+                )
+              )}
             </div>
+
+            {articleData.hashtags.length > 0 && (
+              <div className="mt-8 flex flex-wrap gap-2">
+                {articleData.hashtags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-news-red/30 bg-news-red/5 px-3 py-1 text-xs font-semibold text-news-red"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
 
             <div className="mt-8 rounded-xl border border-zinc-200 bg-white p-4">
               <AdSenseUnit adSlot="7591710868" adFormat="autorelaxed" />

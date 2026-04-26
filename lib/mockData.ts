@@ -30,6 +30,7 @@ export const heroStory = {
 export const latestNews = [
   {
     slug: "central-bank-holds-rates",
+    category: "Business",
     title: "Central Bank Holds Rates, Signals Growth Concerns",
     image:
       "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=600&q=80",
@@ -37,6 +38,7 @@ export const latestNews = [
   },
   {
     slug: "ai-startups-record-funding",
+    category: "Tech",
     title: "AI Startups Attract Record Funding in Q1",
     image:
       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=600&q=80",
@@ -44,6 +46,7 @@ export const latestNews = [
   },
   {
     slug: "national-team-summer-tour",
+    category: "Sports",
     title: "National Team Names Squad for Summer Tour",
     image:
       "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=600&q=80",
