@@ -19,7 +19,7 @@ export function Footer() {
           </div>
           <h3 className="mb-3 font-serif text-xl font-bold text-white">About</h3>
           <p className="text-sm leading-6 text-zinc-400">
-            {SITE_NAME} brings you culture, internet moments, and stories worth sharing—updated around the clock.
+            {SITE_NAME} delivers sharp journalism, in-depth analysis, and breaking updates that matter to global readers.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export function Footer() {
           <h3 className="mb-3 font-serif text-xl font-bold text-white">Contact Info</h3>
           <ul className="space-y-2 text-sm">
             <li>Editorial Desk: +1 (202) 555-0182</li>
-            <li>Email: hello@freememes.com</li>
+            <li>Email: hello@newtimesreporter.com</li>
             <li>Address: 85 Park Avenue, New York, NY</li>
           </ul>
         </div>

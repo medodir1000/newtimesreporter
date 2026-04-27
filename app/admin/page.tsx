@@ -424,7 +424,7 @@ export default function AdminPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-news-red"
-              placeholder="admin@freememes.com"
+              placeholder="admin@newtimesreporter.com"
               autoComplete="email"
             />
             <label className="mb-2 mt-4 block text-sm font-semibold text-zinc-700">Password</label>

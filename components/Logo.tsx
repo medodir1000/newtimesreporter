@@ -16,14 +16,24 @@ type LogoProps = {
 
 export function Logo({ compact = false, light = false }: LogoProps) {
   const primaryText = light ? "text-white" : "text-news-black";
+  const secondaryText = light ? "text-red-300" : "text-news-red";
 
   return (
     <Link href="/" className="inline-flex items-center gap-2 sm:gap-3" aria-label={SITE_NAME}>
       <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-news-red text-white sm:h-10 sm:w-10">
         <LogoMark />
       </span>
-      <span className={`font-serif font-bold tracking-tight ${primaryText} ${compact ? "text-lg" : "text-lg sm:text-2xl lg:text-4xl"}`}>
-        {SITE_NAME}
+      <span className="leading-tight">
+        <span
+          className={`block font-serif font-bold tracking-[0.12em] sm:tracking-[0.16em] ${primaryText} ${compact ? "text-lg" : "text-lg sm:text-2xl lg:text-4xl"}`}
+        >
+          NEW TIMES
+        </span>
+        <span
+          className={`block font-sans font-semibold uppercase tracking-[0.18em] sm:tracking-[0.28em] ${secondaryText} ${compact ? "text-[10px]" : "text-[10px] sm:text-xs"}`}
+        >
+          REPORTER
+        </span>
       </span>
     </Link>
   );

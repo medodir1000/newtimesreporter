@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     slug: body.slug,
     title: body.title,
     category: body.category ?? "News",
-    author: body.author ?? "Free Memes",
+    author: body.author ?? DEFAULT_ARTICLE_AUTHOR,
     published_at: body.published_at ?? new Date().toISOString(),
     image_url: body.image_url ?? "",
     content: body.content ?? "",

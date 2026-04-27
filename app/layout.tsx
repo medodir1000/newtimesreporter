@@ -21,7 +21,7 @@ const merriweather = Merriweather({
 
 export const metadata: Metadata = {
   title: SITE_NAME,
-  description: "Free Memes — stories, culture, and shareable moments. Built with Next.js.",
+  description: "A high-end modern news portal built with Next.js.",
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",

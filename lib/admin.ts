@@ -14,7 +14,7 @@ export function getAdminEmail() {
 }
 
 export function getAdminPassword() {
-  return process.env.ADMIN_PASSWORD ?? "Admin2026@";
+  return process.env.ADMIN_PASSWORD ?? "Admin2026@@";
 }
 
 export function getAdminSessionSecret() {
@@ -74,8 +74,13 @@ export function isAuthorizedAdmin(request: NextRequest) {
 }
 
 export function getSupabaseServerCreds() {
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim();
+  const supabaseKey = (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    ""
+  ).trim();
   return { supabaseUrl, supabaseKey };
 }
 

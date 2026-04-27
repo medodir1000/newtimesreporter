@@ -5,7 +5,7 @@ create table if not exists public.articles (
   slug text not null unique,
   category text default 'News',
   title text not null,
-  author text default 'Free Memes',
+  author text default 'New Time Reporter',
   published_at timestamptz default now(),
   image_url text,
   content text,

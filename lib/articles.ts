@@ -36,9 +36,13 @@ type SupabaseArticle = {
 };
 
 function getSupabaseCreds() {
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = (process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim();
+  const supabaseKey = (
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    ""
+  ).trim();
   return { supabaseUrl, supabaseKey };
 }
 
@@ -117,7 +121,7 @@ export async function getArticleBySlug(slug: string): Promise<ArticleView | null
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`
       },
-      next: { revalidate: 300 }
+      cache: "no-store"
     });
 
     if (!response.ok) {
@@ -163,7 +167,7 @@ export async function getRelatedArticles(slug: string, limit = 3): Promise<Artic
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`
       },
-      next: { revalidate: 300 }
+      cache: "no-store"
     });
 
     if (!response.ok) {
@@ -210,7 +214,8 @@ export async function getHomepageArticles(limit = 24): Promise<ArticleView[]> {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`
       },
-      next: { revalidate: 120 }
+      // Always hit Supabase on each request (Netlify / Next Data Cache can otherwise keep an empty first response).
+      cache: "no-store"
     });
 
     if (!response.ok) {
