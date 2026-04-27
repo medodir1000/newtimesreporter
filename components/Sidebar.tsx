@@ -33,15 +33,15 @@ export function Sidebar({ latestNews, mostRead, trendingNow }: SidebarProps) {
         <h2 className="mb-4 text-xl font-bold text-news-black">Latest News</h2>
         <div className="space-y-4">
           {latestNews.map((item, index) => (
-            <article key={item.title} className="flex gap-3 border-b border-zinc-100 pb-4 last:border-b-0 last:pb-0">
-              <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded">
+            <article key={item.slug || `${item.title}-${index}`} className="flex gap-3 border-b border-zinc-100 pb-4 last:border-b-0 last:pb-0">
+              <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded">
                 <Image
                   src={unsplashThumb(item.image)}
                   alt={item.title}
                   fill
                   placeholder="blur"
                   blurDataURL={blurDataURL}
-                  sizes="80px"
+                  sizes="112px"
                   unoptimized
                   decoding="async"
                   fetchPriority={index === 0 ? "auto" : "low"}
@@ -68,7 +68,7 @@ export function Sidebar({ latestNews, mostRead, trendingNow }: SidebarProps) {
         <h2 className="mb-4 text-xl font-bold text-news-black">Most Read</h2>
         <ol className="space-y-3">
           {mostRead.map((item, index) => (
-            <li key={item} className="flex gap-3">
+            <li key={`${item}-${index}`} className="flex gap-3">
               <span className="w-5 font-serif text-xl font-bold text-news-red">{index + 1}</span>
               <span className="text-sm font-semibold text-zinc-800">{item}</span>
             </li>
@@ -79,8 +79,8 @@ export function Sidebar({ latestNews, mostRead, trendingNow }: SidebarProps) {
       <section className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
         <h2 className="mb-4 text-xl font-bold text-news-black">Trending Now</h2>
         <div className="space-y-4">
-          {trendingNow.map((item) => (
-            <article key={item.title}>
+          {trendingNow.map((item, index) => (
+            <article key={item.slug || `${item.title}-${index}`}>
               <span className="inline-block bg-news-red/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-news-red">
                 {item.category}
               </span>

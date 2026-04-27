@@ -34,11 +34,17 @@ type FormState = {
   canonical_url: string;
 };
 
+type AnalyticsState = {
+  totalViews: number;
+  topCountries: { country: string; views: number }[];
+  byArticle: { slug: string; title: string; views: number; topCountry: string }[];
+};
+
 const emptyForm: FormState = {
   slug: "",
   category: "News",
   title: "",
-  author: "",
+  author: "Arthur Sterling",
   published_at: "",
   image_url: "",
   content: "",
@@ -51,6 +57,8 @@ const emptyForm: FormState = {
 
 const fallbackArticleImage =
   "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1600&q=80";
+
+const authorOptions = ["Arthur Sterling", "Julian Vane", "Eleanor Thorne", "Grant Mitchell", "Clara Whitmore", "Godfrey Benjamin"];
 
 function slugify(value: string) {
   return value
@@ -80,6 +88,11 @@ export default function AdminPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [previewImageBySlug, setPreviewImageBySlug] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
+  const [analytics, setAnalytics] = useState<AnalyticsState>({
+    totalViews: 0,
+    topCountries: [],
+    byArticle: []
+  });
 
   useEffect(() => {
     void checkExistingSession();
@@ -102,9 +115,29 @@ export default function AdminPage() {
       }
 
       setArticles(result.data ?? []);
+      await loadAnalytics();
       return true;
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadAnalytics() {
+    try {
+      const response = await fetch("/api/admin/analytics", { cache: "no-store" });
+      const result = await response.json();
+      if (!response.ok) {
+        return;
+      }
+      setAnalytics(
+        result.data ?? {
+          totalViews: 0,
+          topCountries: [],
+          byArticle: []
+        }
+      );
+    } catch {
+      // Keep dashboard usable even if analytics fails.
     }
   }
 
@@ -115,6 +148,13 @@ export default function AdminPage() {
 
   const canSubmit = useMemo(() => Boolean(form.title.trim() && form.slug.trim()), [form.slug, form.title]);
   const resolvedImageUrl = form.image_url.trim() || previewImageBySlug[form.slug.trim()] || (editingSlug ? previewImageBySlug[editingSlug] ?? "" : "");
+  const analyticsBySlug = useMemo(() => {
+    const map = new Map<string, { views: number; topCountry: string }>();
+    analytics.byArticle.forEach((item) => {
+      map.set(item.slug, { views: item.views, topCountry: item.topCountry });
+    });
+    return map;
+  }, [analytics.byArticle]);
 
   function resetForm() {
     setEditingId(null);
@@ -384,7 +424,7 @@ export default function AdminPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-news-red"
-              placeholder="admin@newtimesreporter.com"
+              placeholder="admin@freememes.com"
               autoComplete="email"
             />
             <label className="mb-2 mt-4 block text-sm font-semibold text-zinc-700">Password</label>
@@ -459,12 +499,18 @@ export default function AdminPage() {
             ))}
             <option value="News">News</option>
           </select>
-          <input
+          <select
             value={form.author}
             onChange={(event) => setForm((prev) => ({ ...prev, author: event.target.value }))}
             className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-news-red"
-            placeholder="Author"
-          />
+          >
+            {form.author && !authorOptions.includes(form.author) && <option value={form.author}>{form.author}</option>}
+            {authorOptions.map((authorName) => (
+              <option key={authorName} value={authorName}>
+                {authorName}
+              </option>
+            ))}
+          </select>
           <input
             type="datetime-local"
             value={form.published_at}
@@ -486,7 +532,11 @@ export default function AdminPage() {
               onChange={(event) => void onUploadImage(event.target.files?.[0] ?? null)}
               className="block w-full text-sm text-zinc-600 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-100 file:px-3 file:py-2 file:text-xs file:font-semibold"
             />
-            <p className="mt-2 text-xs text-zinc-500">{uploadingImage ? "Uploading..." : "Allowed: JPG, PNG, WEBP (max 5MB)."}</p>
+            <p className="mt-2 text-xs text-zinc-500">
+              {uploadingImage
+                ? "Uploading..."
+                : "JPG, PNG, WEBP, GIF (max 5MB). Stored as compressed WebP on the server."}
+            </p>
             <label className="mb-2 mt-4 block text-xs font-semibold uppercase tracking-wide text-zinc-600">Upload multiple images into content</label>
             <input
               type="file"
@@ -560,6 +610,16 @@ export default function AdminPage() {
       </section>
 
       <section className="mt-6 rounded-xl border border-zinc-200 bg-white p-4">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
+          <span className="rounded-full bg-news-red/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-news-red">
+            Total Views: {analytics.totalViews}
+          </span>
+          {analytics.topCountries.slice(0, 3).map((item) => (
+            <span key={item.country} className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700">
+              {item.country}: {item.views}
+            </span>
+          ))}
+        </div>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-serif text-xl font-bold text-news-black">Articles</h2>
           <div className="flex gap-2">
@@ -580,6 +640,14 @@ export default function AdminPage() {
         <div className="grid gap-3 md:grid-cols-2">
           {articles.map((item) => (
             <article key={`${item.id}-${item.slug}`} className="rounded-lg border border-zinc-200 p-3">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-700">
+                  Views: {analyticsBySlug.get(item.slug)?.views ?? 0}
+                </span>
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-700">
+                  Top Country: {analyticsBySlug.get(item.slug)?.topCountry ?? "Unknown"}
+                </span>
+              </div>
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs uppercase tracking-wide text-zinc-500">{item.category ?? "News"}</p>
                 <span

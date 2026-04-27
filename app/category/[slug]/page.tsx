@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { getHomepageArticles } from "@/lib/articles";
+import { categorySlugFromLabel, displayLabelFromSlug } from "@/lib/categorySlug";
 import { blurPlaceholderDataURL, unsplashCard } from "@/lib/images";
 import { categories, tickerItems } from "@/lib/mockData";
 
@@ -21,15 +22,20 @@ export const dynamic = "force-dynamic";
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
-  const category = categories.find((item) => item.slug === slug);
   const blurDataURL = blurPlaceholderDataURL();
 
-  if (!category) {
+  if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(slug)) {
     notFound();
   }
 
+  const normalizedSlug = slug.toLowerCase();
+  const known = categories.find((item) => item.slug === normalizedSlug);
+  const heading = known?.label ?? displayLabelFromSlug(normalizedSlug);
+
   const allArticles = await getHomepageArticles(100);
-  const categoryArticles = allArticles.filter((article) => article.category.toLowerCase() === category.label.toLowerCase());
+  const categoryArticles = allArticles.filter(
+    (article) => categorySlugFromLabel(article.category) === normalizedSlug
+  );
 
   return (
     <main>
@@ -38,7 +44,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-zinc-200 pb-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-news-red">Category</p>
-            <h1 className="mt-1 font-serif text-4xl font-bold text-news-black sm:text-5xl">{category.label}</h1>
+            <h1 className="mt-1 font-serif text-4xl font-bold text-news-black sm:text-5xl">{heading}</h1>
           </div>
           <p className="text-sm text-zinc-600">{categoryArticles.length} stories available</p>
         </div>

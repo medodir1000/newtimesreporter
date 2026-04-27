@@ -8,6 +8,7 @@
 
 body {
   @apply bg-white text-news-black font-sans antialiased;
+  overflow-x: hidden;
 }
 
 a {
@@ -16,6 +17,16 @@ a {
 
 .article-copy p {
   @apply mb-6 text-[1.06rem] leading-8 text-zinc-700;
+}
+
+.article-copy img {
+  @apply h-auto w-full;
+}
+
+@media (max-width: 640px) {
+  .article-copy p {
+    @apply mb-5 text-base leading-7;
+  }
 }
 
 /* Breaking news ticker — CSS only (no JS animation library) */

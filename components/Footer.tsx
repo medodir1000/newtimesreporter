@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { categories } from "@/lib/mockData";
+import { SITE_NAME } from "@/lib/site";
 import { Logo } from "./Logo";
 
 const quickLinks = [
@@ -18,7 +19,7 @@ export function Footer() {
           </div>
           <h3 className="mb-3 font-serif text-xl font-bold text-white">About</h3>
           <p className="text-sm leading-6 text-zinc-400">
-            New Times Reporter delivers sharp journalism, in-depth analysis, and breaking updates that matter to global readers.
+            {SITE_NAME} brings you culture, internet moments, and stories worth sharing—updated around the clock.
           </p>
         </div>
 
@@ -52,13 +53,13 @@ export function Footer() {
           <h3 className="mb-3 font-serif text-xl font-bold text-white">Contact Info</h3>
           <ul className="space-y-2 text-sm">
             <li>Editorial Desk: +1 (202) 555-0182</li>
-            <li>Email: hello@newtimesreporter.com</li>
+            <li>Email: hello@freememes.com</li>
             <li>Address: 85 Park Avenue, New York, NY</li>
           </ul>
         </div>
       </div>
       <div className="border-t border-zinc-800 py-4 text-center text-xs text-zinc-500">
-        Copyright 2026 New Times Reporter. All rights reserved.
+        Copyright 2026 {SITE_NAME}. All rights reserved.
       </div>
     </footer>
   );

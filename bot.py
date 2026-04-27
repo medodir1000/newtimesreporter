@@ -94,6 +94,45 @@ VALID_CATEGORIES = [
 ]
 
 
+NOISY_BODY_PATTERNS = [
+    r"^\s*here(?:'s| is)\b",
+    r"^\s*this article\b",
+    r"^\s*output strict json\b",
+    r"^\s*json schema\b",
+    r"^\s*requirements?:\b",
+    r"^\s*input headline:\b",
+    r"^\s*input summary:\b",
+    r"^\s*source url:\b",
+    r"^\s*published at:\b",
+    r"^\s*إليك\b",
+]
+
+
+def clean_generated_body(body: str, headline: str) -> str:
+    text = (body or "").replace("\r\n", "\n").strip()
+    if not text:
+        return text
+
+    lines = [line.strip() for line in text.split("\n")]
+    cleaned_lines: list[str] = []
+
+    for line in lines:
+        if not line:
+            cleaned_lines.append("")
+            continue
+        lower = line.lower()
+        if any(re.match(pattern, lower, flags=re.IGNORECASE) for pattern in NOISY_BODY_PATTERNS):
+            continue
+        cleaned_lines.append(line)
+
+    # Remove duplicated headline if model put it as first line.
+    while cleaned_lines and cleaned_lines[0].strip(" #:-").lower() == headline.strip().lower():
+        cleaned_lines.pop(0)
+
+    cleaned = "\n".join(cleaned_lines).strip()
+    return cleaned or text
+
+
 def rewrite_article(title: str, summary: str, source_link: str, published_at: str | None) -> dict:
     prompt = f"""
 You are a senior international newsroom editor.
@@ -145,6 +184,7 @@ Published at: {published_at or ""}
         data = json.loads(text)
         headline = str(data.get("headline") or title).strip() or title
         body = str(data.get("body") or summary or title).strip() or (summary or title)
+        body = clean_generated_body(body, headline)
         category = str(data.get("category") or "World").strip().title()
         if category not in VALID_CATEGORIES:
             category = "World"
@@ -177,7 +217,7 @@ Published at: {published_at or ""}
     except Exception:
         return {
             "headline": title,
-            "body": text or summary or title,
+            "body": clean_generated_body(text or summary or title, title),
             "category": "World",
             "hashtags": [],
             "seo_title": title,

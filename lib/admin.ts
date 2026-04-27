@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest } from "next/server";
+import { DEFAULT_ADMIN_EMAIL } from "@/lib/site";
 
 export const ADMIN_SESSION_COOKIE = "admin_session";
 const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 12; // 12 hours
@@ -9,7 +10,7 @@ export function getAdminToken() {
 }
 
 export function getAdminEmail() {
-  return process.env.ADMIN_EMAIL ?? "admin@newtimesreporter.com";
+  return process.env.ADMIN_EMAIL ?? DEFAULT_ADMIN_EMAIL;
 }
 
 export function getAdminPassword() {

@@ -1,4 +1,5 @@
 import { articles as fallbackArticles } from "@/lib/mockData";
+import { DEFAULT_ARTICLE_AUTHOR, SITE_NAME } from "@/lib/site";
 
 export type ArticleView = {
   id?: number;
@@ -81,11 +82,11 @@ function mapSupabaseArticle(row: SupabaseArticle): ArticleView {
     slug: row.slug,
     category: row.category ?? "News",
     title: row.title,
-    author: row.author ?? "New Time Reporter",
+    author: row.author ?? DEFAULT_ARTICLE_AUTHOR,
     date: publishedAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
     publishedAtISO: publishedAt.toISOString(),
     image: safeImage,
-    caption: row.category ? `${row.category} coverage from New Times Reporter.` : "Latest coverage from New Times Reporter.",
+    caption: row.category ? `${row.category} coverage from ${SITE_NAME}.` : `Latest coverage from ${SITE_NAME}.`,
     content: toParagraphs(row.content),
     hashtags: row.hashtags ?? [],
     seoTitle: row.seo_title ?? row.title,

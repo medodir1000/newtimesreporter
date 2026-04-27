@@ -4,13 +4,19 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Facebook, Linkedin, Twitter } from "lucide-react";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
+import { ArticleViewTracker } from "@/components/ArticleViewTracker";
 import { Footer } from "@/components/Footer";
+import { ArticleComments } from "@/components/ArticleComments";
+import { ArticleShareInline } from "@/components/ArticleShareInline";
 import { FloatingShareBar } from "@/components/FloatingShareBar";
 import { MustReadCard } from "@/components/MustReadCard";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
-import { blurPlaceholderDataURL, unsplashArticle } from "@/lib/images";
+import { blurPlaceholderDataURL, unsplashArticle, unsplashThumb } from "@/lib/images";
+import { getAuthorProfile } from "@/lib/authors";
 import { getArticleBySlug, getHomepageArticles, getRelatedArticles } from "@/lib/articles";
+import { categorySlugFromLabel } from "@/lib/categorySlug";
+import { getSiteUrl, SITE_NAME } from "@/lib/site";
 import { articles, tickerItems } from "@/lib/mockData";
 
 type ArticlePageProps = {
@@ -29,7 +35,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
   if (!article) {
     return {
-      title: "Article Not Found | New Times Reporter",
+      title: `Article Not Found | ${SITE_NAME}`,
       description: "This article is unavailable."
     };
   }
@@ -81,8 +87,20 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     notFound();
   }
 
-  const articleUrl = `https://newtimesreporter.com/article/${articleData.slug}`;
-  const contentBlocks = articleData.content
+  const articleUrl = `${getSiteUrl()}/article/${articleData.slug}`;
+  const noisyParagraphPatterns = [
+    /^\s*here(?:'s| is)\b/i,
+    /^\s*output strict json\b/i,
+    /^\s*json schema\b/i,
+    /^\s*requirements?:\b/i,
+    /^\s*input headline:\b/i,
+    /^\s*input summary:\b/i,
+    /^\s*source url:\b/i,
+    /^\s*published at:\b/i,
+    /^\s*إليك\b/i
+  ];
+
+  const parsedBlocks = articleData.content
     .map((paragraph) => {
       const markdownImageMatch = paragraph.match(/^!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)$/i);
       if (markdownImageMatch) {
@@ -94,7 +112,62 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       }
       return { type: "text" as const, text: paragraph };
     })
-    .filter((block) => (block.type === "text" ? block.text.trim().length > 0 : block.url.trim().length > 0));
+    .filter((block) => {
+      if (block.type === "image") return block.url.trim().length > 0;
+      const text = block.text.trim();
+      if (!text) return false;
+      return !noisyParagraphPatterns.some((pattern) => pattern.test(text));
+    });
+
+  const distributeTrailingImages = (
+    blocks: Array<{ type: "text"; text: string } | { type: "image"; url: string }>
+  ) => {
+    if (blocks.length < 4) return blocks;
+
+    let firstTrailingImageIndex = -1;
+    for (let i = blocks.length - 1; i >= 0; i--) {
+      if (blocks[i].type === "image") {
+        firstTrailingImageIndex = i;
+      } else {
+        break;
+      }
+    }
+
+    if (firstTrailingImageIndex === -1) return blocks;
+
+    const headBlocks = blocks.slice(0, firstTrailingImageIndex);
+    const trailingImages = blocks.slice(firstTrailingImageIndex).filter((b) => b.type === "image");
+
+    // Rebalance only when all trailing blocks are images and there are multiple of them.
+    if (trailingImages.length < 2 || headBlocks.some((b) => b.type === "image")) return blocks;
+
+    const textBlocks = headBlocks.filter((b) => b.type === "text");
+    if (textBlocks.length < 3) return blocks;
+
+    const interval = Math.max(1, Math.floor(textBlocks.length / (trailingImages.length + 1)));
+    const result: Array<{ type: "text"; text: string } | { type: "image"; url: string }> = [];
+    let imageCursor = 0;
+
+    textBlocks.forEach((textBlock, index) => {
+      result.push(textBlock);
+      const shouldInsertImage =
+        imageCursor < trailingImages.length && (index + 1) % interval === 0 && index < textBlocks.length - 1;
+      if (shouldInsertImage) {
+        result.push(trailingImages[imageCursor]);
+        imageCursor += 1;
+      }
+    });
+
+    while (imageCursor < trailingImages.length) {
+      const insertAt = Math.max(1, result.length - 1);
+      result.splice(insertAt, 0, trailingImages[imageCursor]);
+      imageCursor += 1;
+    }
+
+    return result;
+  };
+
+  const contentBlocks = distributeTrailingImages(parsedBlocks);
 
   const words = contentBlocks
     .filter((block) => block.type === "text")
@@ -104,6 +177,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     .split(/\s+/)
     .filter(Boolean).length;
   const readingTime = Math.max(1, Math.ceil(words / 220));
+  const authorProfile = getAuthorProfile(articleData.author);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "NewsArticle",
@@ -119,10 +193,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     ],
     publisher: {
       "@type": "Organization",
-      name: "New Times Reporter",
+      name: SITE_NAME,
       logo: {
         "@type": "ImageObject",
-        url: "https://newtimesreporter.com/logo.png"
+        url: `${getSiteUrl()}/icon.svg`
       }
     },
     mainEntityOfPage: {
@@ -136,32 +210,42 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   return (
     <main>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ArticleViewTracker slug={articleData.slug} />
       <Navbar tickerItems={tickerItems} />
       <FloatingShareBar title={articleData.title} url={articleUrl} />
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <nav className="mb-6 text-sm text-zinc-500">
+      <section className="mx-auto max-w-7xl px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
+        <nav className="mb-5 truncate text-xs text-zinc-500 sm:mb-6 sm:text-sm">
           <Link href="/" className="hover:text-news-red">
             Home
           </Link>{" "}
           &gt;{" "}
-          <Link href={`/category/${articleData.category.toLowerCase()}`} className="hover:text-news-red">
+          <Link href={`/category/${categorySlugFromLabel(articleData.category)}`} className="hover:text-news-red">
             {articleData.category}
           </Link>{" "}
           &gt; <span className="text-zinc-700">{articleData.title}</span>
         </nav>
 
-        <div className="grid gap-10 lg:grid-cols-3">
-          <article className="lg:col-span-2">
-            <h1 className="font-serif text-3xl font-bold leading-tight text-news-black sm:text-5xl">{articleData.title}</h1>
+        <div className="grid gap-8 lg:grid-cols-3 lg:gap-10">
+          <article className="min-w-0 lg:col-span-2">
+            <h1 className="break-words font-serif text-[1.95rem] font-bold leading-tight text-news-black sm:text-4xl lg:text-5xl">
+              {articleData.title}
+            </h1>
 
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-y border-zinc-200 py-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-zinc-200 font-bold text-zinc-700">
-                  {articleData.author.charAt(0)}
+            <div className="mt-5 flex flex-col gap-3 border-y border-zinc-200 py-3 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:py-4">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
+                  <Image
+                    src={unsplashThumb(authorProfile.photo)}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="44px"
+                    unoptimized
+                  />
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-zinc-900">{articleData.author}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-zinc-900">{authorProfile.name}</p>
                   <div className="mt-0.5 flex items-center gap-2">
                     <p className="text-xs text-zinc-500">{articleData.date}</p>
                     <span className="rounded-full bg-news-red/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-news-red">
@@ -202,8 +286,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               </div>
             </div>
 
-            <figure className="mt-8">
-              <div className="relative h-[260px] overflow-hidden rounded-xl sm:h-[460px]">
+            <figure className="mt-6 sm:mt-8">
+              <div className="relative h-[220px] overflow-hidden rounded-xl sm:h-[460px]">
                 <Image
                   src={unsplashArticle(articleData.image)}
                   alt={articleData.title}
@@ -218,14 +302,14 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
                 />
               </div>
-              <figcaption className="mt-2 text-sm text-zinc-500">{articleData.caption}</figcaption>
+              <figcaption className="mt-2 break-words text-sm text-zinc-500">{articleData.caption}</figcaption>
             </figure>
 
-            <div className="mt-8 rounded-xl border border-zinc-200 bg-white p-4">
+            <div className="mt-6 overflow-hidden rounded-xl border border-zinc-200 bg-white p-3 sm:mt-8 sm:p-4">
               <AdSenseUnit adSlot="2446135906" adFormat="fluid" adLayout="in-article" style={{ textAlign: "center" }} />
             </div>
 
-            <div className="article-copy mt-10">
+            <div className="article-copy mt-7 sm:mt-10">
               {contentBlocks.map((block, index) =>
                 block.type === "text" ? (
                   <p key={`text-${index}`}>{block.text}</p>
@@ -250,12 +334,44 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               </div>
             )}
 
-            <div className="mt-8 rounded-xl border border-zinc-200 bg-white p-4">
+            <ArticleShareInline title={articleData.title} url={articleUrl} />
+            <ArticleComments slug={articleData.slug} />
+
+            <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
+                  <Image
+                    src={unsplashThumb(authorProfile.photo)}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes="56px"
+                    unoptimized
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-news-black">{authorProfile.name}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-zinc-600">{authorProfile.bio}</p>
+                  {authorProfile.website && (
+                    <a
+                      href={authorProfile.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-block text-xs font-semibold text-news-red hover:underline"
+                    >
+                      {authorProfile.website}
+                    </a>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 overflow-hidden rounded-xl border border-zinc-200 bg-white p-4">
               <AdSenseUnit adSlot="7591710868" adFormat="autorelaxed" />
             </div>
           </article>
 
-          <div>
+          <div className="min-w-0">
             <Sidebar latestNews={latestNews} mostRead={mostRead} trendingNow={trendingNow} />
           </div>
         </div>
@@ -264,7 +380,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       {relatedArticles.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 lg:px-8">
           <div className="mb-4 flex items-end justify-between border-b-2 border-news-black pb-2">
-            <h2 className="font-serif text-xl font-bold tracking-tight text-news-black sm:text-2xl">More from New Time Reporter</h2>
+            <h2 className="font-serif text-xl font-bold tracking-tight text-news-black sm:text-2xl">More from {SITE_NAME}</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {relatedArticles.map((item) => (

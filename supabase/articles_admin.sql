@@ -5,7 +5,7 @@ create table if not exists public.articles (
   slug text not null unique,
   category text default 'News',
   title text not null,
-  author text default 'New Time Reporter',
+  author text default 'Free Memes',
   published_at timestamptz default now(),
   image_url text,
   content text,
@@ -50,6 +50,36 @@ using (true);
 drop policy if exists "Service role full access on articles" on public.articles;
 create policy "Service role full access on articles"
 on public.articles
+for all
+to service_role
+using (true)
+with check (true);
+
+create table if not exists public.article_views (
+  id uuid primary key default gen_random_uuid(),
+  article_slug text not null references public.articles(slug) on delete cascade,
+  country text default 'Unknown',
+  city text default 'Unknown',
+  visitor_hash text,
+  viewed_at timestamptz not null default now()
+);
+
+create index if not exists idx_article_views_article_slug on public.article_views(article_slug);
+create index if not exists idx_article_views_viewed_at on public.article_views(viewed_at desc);
+create index if not exists idx_article_views_country on public.article_views(country);
+
+alter table public.article_views enable row level security;
+
+drop policy if exists "Public can insert article views" on public.article_views;
+create policy "Public can insert article views"
+on public.article_views
+for insert
+to anon, authenticated
+with check (true);
+
+drop policy if exists "Service role full access on article views" on public.article_views;
+create policy "Service role full access on article views"
+on public.article_views
 for all
 to service_role
 using (true)

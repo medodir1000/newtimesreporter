@@ -21,7 +21,7 @@ export function MustReadCard({ article }: { article: Article }) {
   return (
     <article className="flex flex-col rounded-lg border border-zinc-200 bg-white">
       <Link href={`/article/${article.slug}`} className="group block">
-        <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-100">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100">
           <Image
             src={unsplashCard(article.image)}
             alt={article.title}
@@ -29,7 +29,7 @@ export function MustReadCard({ article }: { article: Article }) {
             placeholder="blur"
             blurDataURL={blurDataURL}
             unoptimized
-            sizes="(max-width: 640px) 100vw, 33vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition duration-300 group-hover:opacity-95"
           />
         </div>

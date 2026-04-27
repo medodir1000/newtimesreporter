@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 import { AdSenseScript } from "@/components/AdSenseScript";
+import { SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,8 +20,13 @@ const merriweather = Merriweather({
 });
 
 export const metadata: Metadata = {
-  title: "New Times Reporter",
-  description: "A high-end modern news portal built with Next.js."
+  title: SITE_NAME,
+  description: "Free Memes — stories, culture, and shareable moments. Built with Next.js.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg"
+  }
 };
 
 export default function RootLayout({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAuthorizedAdmin, getMissingSupabaseVars, getSupabaseServerCreds } from "@/lib/admin";
+import { DEFAULT_ARTICLE_AUTHOR } from "@/lib/site";
 
 type AdminArticlePayload = {
   slug: string;
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
     slug: body.slug,
     title: body.title,
     category: body.category ?? "News",
-    author: body.author ?? "New Time Reporter",
+    author: body.author ?? "Free Memes",
     published_at: body.published_at ?? new Date().toISOString(),
     image_url: body.image_url ?? "",
     content: body.content ?? "",
