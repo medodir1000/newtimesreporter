@@ -181,8 +181,8 @@ export default async function HomePage() {
               <span className="text-xs font-semibold uppercase tracking-wider text-news-red">Today</span>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {mustRead.map((article, index) => (
-                <MustReadCard key={article.slug} article={article} highPriority={index < 2} />
+              {mustRead.map((article) => (
+                <MustReadCard key={article.slug} article={article} />
               ))}
             </div>
           </div>

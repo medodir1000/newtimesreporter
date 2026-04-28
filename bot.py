@@ -21,7 +21,7 @@ import feedparser
 from openai import OpenAI
 from supabase import create_client
 
-from google_indexer import notify_new_article
+from google_indexer import notify_google_indexing, notify_google_indexing_batch, ping_sitemaps
 
 # RSS bot is OFF unless BOT_ENABLED=1 (manual articles only via Next.js /admin by default).
 RSS_URL = "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
@@ -67,6 +67,16 @@ def site_public_base_url() -> str:
     """Same origin as Next.js NEXT_PUBLIC_SITE_URL / OpenRouter site URL (no trailing slash)."""
     raw = os.getenv("NEXT_PUBLIC_SITE_URL") or os.getenv("OPENROUTER_SITE_URL") or "https://newtimesreporter.com"
     return raw.strip().rstrip("/")
+
+
+def indexing_batch_size() -> int:
+    """Default 1 = immediate notify after each insert. Increase for bulk publish runs."""
+    raw = os.getenv("BOT_INDEXING_BATCH_SIZE", "1").strip()
+    try:
+        n = int(raw)
+    except ValueError:
+        return 1
+    return max(1, min(n, 20))
 
 
 def _env_status(name: str) -> str:
@@ -439,6 +449,11 @@ def start_bot():
     limit = max_articles_per_run()
     print(f"Fetched {len(feed.entries)} entries from RSS. Processing up to {limit} article(s) (BOT_MAX_ARTICLES).")
 
+    base = site_public_base_url()
+    sitemap_url = f"{base}/sitemap.xml"
+    pending_index_urls: list[str] = []
+    batch_size = indexing_batch_size()
+
     for entry in feed.entries[:limit]:
         title = (entry.get("title") or "").strip()
         if not title:
@@ -502,15 +517,41 @@ def start_bot():
         try:
             supabase.table("articles").upsert(data, on_conflict="slug").execute()
             print(f"Published/updated: {rewritten_title}")
-            base = site_public_base_url()
             article_url = f"{base}/article/{slug}"
-            sitemap_url = f"{base}/sitemap.xml"
-            try:
-                notify_new_article(article_url, sitemap_url)
-            except Exception as ping_err:
-                print(f"Search notify (indexing/ping) skipped: {ping_err}")
+            pending_index_urls.append(article_url)
+
+            # Immediate by default (batch_size=1). For larger runs, flush in grouped calls.
+            if len(pending_index_urls) >= batch_size:
+                try:
+                    if len(pending_index_urls) == 1:
+                        ok = notify_google_indexing(pending_index_urls[0], action="URL_UPDATED")
+                        print(
+                            f"Indexing notify {'OK' if ok else 'FAILED'}: {pending_index_urls[0]}"
+                        )
+                    else:
+                        results = notify_google_indexing_batch(pending_index_urls, action="URL_UPDATED")
+                        ok_count = sum(1 for ok in results.values() if ok)
+                        print(f"Indexing batch: {ok_count}/{len(results)} URLs notified")
+                    ping_sitemaps(sitemap_url)
+                except Exception as ping_err:
+                    print(f"Search notify (indexing/ping) skipped: {ping_err}")
+                finally:
+                    pending_index_urls.clear()
         except Exception as err:
             print(f"Supabase insert error for '{rewritten_title}': {err}")
+
+    if pending_index_urls:
+        try:
+            if len(pending_index_urls) == 1:
+                ok = notify_google_indexing(pending_index_urls[0], action="URL_UPDATED")
+                print(f"Indexing notify {'OK' if ok else 'FAILED'}: {pending_index_urls[0]}")
+            else:
+                results = notify_google_indexing_batch(pending_index_urls, action="URL_UPDATED")
+                ok_count = sum(1 for ok in results.values() if ok)
+                print(f"Indexing batch: {ok_count}/{len(results)} URLs notified")
+            ping_sitemaps(sitemap_url)
+        except Exception as ping_err:
+            print(f"Search notify (indexing/ping) skipped: {ping_err}")
 
 if __name__ == "__main__":
     start_bot()

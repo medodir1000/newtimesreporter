@@ -14,9 +14,11 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from google.oauth2 import service_account
-from google_auth_httplib2 import AuthorizedHttp
 
 logger = logging.getLogger(__name__)
 
@@ -41,34 +43,111 @@ def _service_account_json_path() -> str | None:
     return path
 
 
-def publish_url(url: str) -> bool:
-    """
-    Send URL_UPDATED to Google Indexing API.
-    Returns True on HTTP 200/204, False if skipped or on error.
-    """
+def _indexing_service():
     path = _service_account_json_path()
     if not path:
         logger.info(
             "Indexing API: skip — set GOOGLE_INDEXING_SA_JSON or GOOGLE_APPLICATION_CREDENTIALS "
             "to an absolute path of the service account JSON (add in .env.local at repo root)."
         )
+        return None
+    creds = service_account.Credentials.from_service_account_file(path, scopes=INDEXING_SCOPE)
+    return build("indexing", "v3", credentials=creds, cache_discovery=False)
+
+
+def notify_google_indexing(url: str, action: str = "URL_UPDATED") -> bool:
+    """
+    Notify Google Indexing API for one URL.
+    action must be URL_UPDATED or URL_DELETED.
+    Returns True on HTTP 200/204, False if skipped or on error.
+    """
+    normalized_url = (url or "").strip()
+    if not normalized_url:
+        logger.warning("Indexing API: skipped empty URL")
         return False
 
-    creds = service_account.Credentials.from_service_account_file(path, scopes=INDEXING_SCOPE)
-    http = AuthorizedHttp(creds)
-    body = json.dumps({"url": url, "type": "URL_UPDATED"}).encode("utf-8")
-    response, content = http.request(
-        INDEXING_ENDPOINT,
-        method="POST",
-        body=body,
-        headers={"Content-Type": "application/json; charset=utf-8"},
-    )
-    text = content.decode("utf-8", errors="replace") if content else ""
-    if response.status not in (200, 204):
-        logger.warning("Indexing API: status=%s body=%s", getattr(response, "status", response), text[:800])
+    action = (action or "URL_UPDATED").strip().upper()
+    if action not in {"URL_UPDATED", "URL_DELETED"}:
+        logger.warning("Indexing API: invalid action=%r (expected URL_UPDATED/URL_DELETED)", action)
         return False
-    logger.info("Indexing API: URL_UPDATED %s", url)
-    return True
+
+    service = _indexing_service()
+    if service is None:
+        return False
+
+    try:
+        response = (
+            service.urlNotifications()
+            .publish(body={"url": normalized_url, "type": action})
+            .execute()
+        )
+        logger.info("Indexing API: %s %s", action, normalized_url)
+        logger.debug("Indexing API response: %s", json.dumps(response)[:1000])
+        return True
+    except HttpError as exc:
+        status = getattr(exc.resp, "status", None)
+        body = ""
+        try:
+            body = exc.content.decode("utf-8", errors="replace") if exc.content else ""
+        except Exception:
+            body = str(exc)
+        if status in (429, 403):
+            logger.warning(
+                "Indexing API quota/permission error (status=%s) for %s: %s",
+                status,
+                normalized_url,
+                body[:800],
+            )
+        else:
+            logger.warning(
+                "Indexing API HTTP error (status=%s) for %s: %s",
+                status,
+                normalized_url,
+                body[:800],
+            )
+        return False
+    except FileNotFoundError:
+        logger.warning("Indexing API key file missing. Check GOOGLE_INDEXING_SA_JSON path.")
+        return False
+    except Exception as exc:
+        logger.warning("Indexing API unexpected error for %s: %s", normalized_url, exc)
+        return False
+
+
+def notify_google_indexing_batch(
+    urls: list[str],
+    action: str = "URL_UPDATED",
+    max_workers: int = 4,
+) -> dict[str, bool]:
+    """
+    Notify Indexing API for multiple URLs concurrently.
+    Returns mapping: url -> success.
+    """
+    cleaned = []
+    for u in urls:
+        uu = (u or "").strip()
+        if uu and uu not in cleaned:
+            cleaned.append(uu)
+    if not cleaned:
+        return {}
+
+    workers = max(1, min(int(max_workers or 1), 10))
+    results: dict[str, bool] = {}
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        future_map = {pool.submit(notify_google_indexing, u, action): u for u in cleaned}
+        for fut in as_completed(future_map):
+            u = future_map[fut]
+            try:
+                results[u] = bool(fut.result())
+            except Exception as exc:
+                logger.warning("Indexing API batch failed for %s: %s", u, exc)
+                results[u] = False
+    return results
+
+
+def publish_url(url: str) -> bool:
+    """Backward-compatible alias for older callers."""
+    return notify_google_indexing(url, "URL_UPDATED")
 
 
 def ping_sitemaps(sitemap_url: str) -> None:
@@ -95,7 +174,7 @@ def ping_sitemaps(sitemap_url: str) -> None:
 
 def notify_new_article(article_url: str, sitemap_url: str) -> None:
     """After a successful publish: Indexing API + ping both engines."""
-    publish_url(article_url)
+    notify_google_indexing(article_url, "URL_UPDATED")
     ping_sitemaps(sitemap_url)
 
 

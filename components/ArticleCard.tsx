@@ -43,13 +43,14 @@ export function ArticleCard({
             priority={priority}
             fetchPriority={priority ? "high" : "low"}
             loading={priority ? undefined : "lazy"}
+            quality={large ? 62 : 70}
             decoding="async"
             sizes={
               large
-                ? "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 800px"
+                ? "(max-width: 640px) 100vw, (max-width: 1024px) 92vw, (max-width: 1280px) 66vw, 760px"
                 : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 360px"
             }
-            className="object-cover transition duration-300 group-hover:scale-[1.02]"
+            className={`object-cover ${priority ? "" : "transition duration-300 group-hover:scale-[1.02]"}`}
           />
         </div>
 

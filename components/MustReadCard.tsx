@@ -17,7 +17,7 @@ function deck(article: Article) {
 
 type MustReadCardProps = {
   article: Article;
-  /** First above-the-fold cards: eager + high fetch priority for LCP. */
+  /** Optional override for specific layouts; keep false on homepage to protect LCP hero bandwidth. */
   highPriority?: boolean;
 };
 
