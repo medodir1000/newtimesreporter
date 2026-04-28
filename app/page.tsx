@@ -12,7 +12,7 @@ import { getHomepageArticles } from "@/lib/articles";
 import { categorySlugFromLabel } from "@/lib/categorySlug";
 import { homeQuickLinks, tickerItems } from "@/lib/mockData";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 function timeAgo(iso: string) {
   const deltaMs = Date.now() - new Date(iso).getTime();
@@ -25,7 +25,8 @@ function timeAgo(iso: string) {
 }
 
 /** Cap homepage rows so the browser is not flooded with hundreds of parallel image requests. */
-const HOME_FEED_LIMIT = 180;
+const HOME_FEED_LIMIT = 80;
+const ALL_STORIES_LIMIT = 40;
 
 export default async function HomePage() {
   const homepageArticles = await getHomepageArticles(HOME_FEED_LIMIT);
@@ -337,6 +338,7 @@ export default async function HomePage() {
               <div className="grid gap-x-8 gap-y-0 rounded-xl border border-zinc-200 bg-white px-3 md:grid-cols-2">
                 <div className="divide-y divide-zinc-100 md:pr-4">
                   {homepageArticles
+                    .slice(0, ALL_STORIES_LIMIT)
                     .filter((_, i) => i % 2 === 0)
                     .map((article) => (
                       <StoryListItem
@@ -352,6 +354,7 @@ export default async function HomePage() {
                 </div>
                 <div className="divide-y divide-zinc-100 md:border-l md:border-zinc-100 md:pl-4">
                   {homepageArticles
+                    .slice(0, ALL_STORIES_LIMIT)
                     .filter((_, i) => i % 2 === 1)
                     .map((article) => (
                       <StoryListItem

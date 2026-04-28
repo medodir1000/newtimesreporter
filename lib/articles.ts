@@ -215,8 +215,8 @@ export async function getHomepageArticles(limit = 24): Promise<ArticleView[]> {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`
       },
-      // Always hit Supabase on each request (Netlify / Next Data Cache can otherwise keep an empty first response).
-      cache: "no-store"
+      // Cache homepage article list briefly to improve TTFB/LCP while still refreshing often.
+      next: { revalidate: 120 }
     });
 
     if (!response.ok) {

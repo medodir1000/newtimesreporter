@@ -18,7 +18,12 @@ export function getAdminPassword() {
 }
 
 export function getAdminSessionSecret() {
-  return process.env.ADMIN_SESSION_SECRET ?? "";
+  const explicit = process.env.ADMIN_SESSION_SECRET?.trim();
+  if (explicit) return explicit;
+  const password = getAdminPassword().trim();
+  // Fallback to keep admin login functional when ADMIN_SESSION_SECRET is not injected.
+  // In production, set ADMIN_SESSION_SECRET explicitly to rotate sessions independently.
+  return password ? `fallback-session-secret:${password}` : "";
 }
 
 function signValue(payload: string, secret: string) {
