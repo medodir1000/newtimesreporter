@@ -1,6 +1,10 @@
 import { articles as fallbackArticles } from "@/lib/mockData";
 import { DEFAULT_ARTICLE_AUTHOR, SITE_NAME } from "@/lib/site";
 
+/** Shared PostgREST `select` for full article rows (keep in sync with `SupabaseArticle`). */
+const ARTICLE_LIST_SELECT =
+  "id,slug,category,title,author,published_at,updated_at,image_url,content,hashtags,seo_title,seo_description,seo_keywords,canonical_url";
+
 export type ArticleView = {
   id?: number;
   slug: string;
@@ -9,6 +13,8 @@ export type ArticleView = {
   author: string;
   date: string;
   publishedAtISO: string;
+  /** When DB has `updated_at`; falls back to publish time for JSON-LD `dateModified`. */
+  modifiedAtISO?: string;
   image: string;
   caption: string;
   content: string[];
@@ -26,6 +32,7 @@ type SupabaseArticle = {
   title: string;
   author: string | null;
   published_at: string | null;
+  updated_at?: string | null;
   image_url: string | null;
   content: string | null;
   hashtags: string[] | null;
@@ -66,6 +73,7 @@ function mapFallbackArticle(slug: string): ArticleView | null {
     author: article.author,
     date: article.date,
     publishedAtISO,
+    modifiedAtISO: publishedAtISO,
     image: article.image,
     caption: article.caption,
     content: article.content,
@@ -77,6 +85,7 @@ function mapFallbackArticle(slug: string): ArticleView | null {
 
 function mapSupabaseArticle(row: SupabaseArticle): ArticleView {
   const publishedAt = row.published_at ? new Date(row.published_at) : new Date();
+  const modifiedAt = row.updated_at ? new Date(row.updated_at) : publishedAt;
   const safeImage =
     typeof row.image_url === "string" && row.image_url.trim().length > 0
       ? row.image_url.trim()
@@ -89,6 +98,7 @@ function mapSupabaseArticle(row: SupabaseArticle): ArticleView {
     author: row.author ?? DEFAULT_ARTICLE_AUTHOR,
     date: publishedAt.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
     publishedAtISO: publishedAt.toISOString(),
+    modifiedAtISO: modifiedAt.toISOString(),
     image: safeImage,
     caption: row.category ? `${row.category} coverage from ${SITE_NAME}.` : `Latest coverage from ${SITE_NAME}.`,
     content: toParagraphs(row.content),
@@ -109,10 +119,7 @@ export async function getArticleBySlug(slug: string): Promise<ArticleView | null
 
   try {
     const url = new URL(`${supabaseUrl}/rest/v1/articles`);
-    url.searchParams.set(
-      "select",
-      "id,slug,category,title,author,published_at,image_url,content,hashtags,seo_title,seo_description,seo_keywords,canonical_url"
-    );
+    url.searchParams.set("select", ARTICLE_LIST_SELECT);
     url.searchParams.set("slug", `eq.${slug}`);
     url.searchParams.set("limit", "1");
 
@@ -155,10 +162,7 @@ export async function getRelatedArticles(slug: string, limit = 3): Promise<Artic
 
   try {
     const url = new URL(`${supabaseUrl}/rest/v1/articles`);
-    url.searchParams.set(
-      "select",
-      "id,slug,category,title,author,published_at,image_url,content,hashtags,seo_title,seo_description,seo_keywords,canonical_url"
-    );
+    url.searchParams.set("select", ARTICLE_LIST_SELECT);
     url.searchParams.set("slug", `neq.${slug}`);
     url.searchParams.set("limit", "24");
 
@@ -202,10 +206,7 @@ export async function getHomepageArticles(limit = 24): Promise<ArticleView[]> {
 
   try {
     const url = new URL(`${supabaseUrl}/rest/v1/articles`);
-    url.searchParams.set(
-      "select",
-      "id,slug,category,title,author,published_at,image_url,content,hashtags,seo_title,seo_description,seo_keywords,canonical_url"
-    );
+    url.searchParams.set("select", ARTICLE_LIST_SELECT);
     url.searchParams.set("order", "published_at.desc");
     url.searchParams.set("limit", String(limit));
 
@@ -231,5 +232,55 @@ export async function getHomepageArticles(limit = 24): Promise<ArticleView[]> {
     return rows.map(mapSupabaseArticle);
   } catch {
     return fallbackItems;
+  }
+}
+
+type SupabaseSlugRow = {
+  slug: string;
+  published_at: string | null;
+};
+
+/** Lightweight list for `sitemap.xml` (slug + date only). */
+export async function getArticleSlugsForSitemap(limit = 2000): Promise<{ slug: string; publishedAtISO: string }[]> {
+  const { supabaseUrl, supabaseKey } = getSupabaseCreds();
+
+  const fallback = fallbackArticles.map((a) => ({
+    slug: a.slug,
+    publishedAtISO: new Date(a.date).toISOString()
+  }));
+
+  if (!supabaseUrl || !supabaseKey) {
+    return fallback.slice(0, limit);
+  }
+
+  try {
+    const url = new URL(`${supabaseUrl}/rest/v1/articles`);
+    url.searchParams.set("select", "slug,published_at");
+    url.searchParams.set("order", "published_at.desc");
+    url.searchParams.set("limit", String(limit));
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`
+      },
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      return fallback.slice(0, limit);
+    }
+
+    const rows = (await response.json()) as SupabaseSlugRow[];
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return [];
+    }
+
+    return rows.map((row) => ({
+      slug: row.slug,
+      publishedAtISO: row.published_at ? new Date(row.published_at).toISOString() : new Date().toISOString()
+    }));
+  } catch {
+    return fallback.slice(0, limit);
   }
 }

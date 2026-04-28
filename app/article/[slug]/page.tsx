@@ -7,12 +7,13 @@ import { AdSenseUnit } from "@/components/AdSenseUnit";
 import { ArticleViewTracker } from "@/components/ArticleViewTracker";
 import { Footer } from "@/components/Footer";
 import { ArticleComments } from "@/components/ArticleComments";
+import { ArticleNewsJsonLd } from "@/components/ArticleNewsJsonLd";
 import { ArticleShareInline } from "@/components/ArticleShareInline";
 import { FloatingShareBar } from "@/components/FloatingShareBar";
 import { MustReadCard } from "@/components/MustReadCard";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
-import { blurPlaceholderDataURL, unsplashArticle, unsplashThumb } from "@/lib/images";
+import { articleImageUrl, blurPlaceholderDataURL, imgPreset, unsplashArticle, unsplashThumb } from "@/lib/images";
 import { getAuthorProfile } from "@/lib/authors";
 import { getArticleBySlug, getHomepageArticles, getRelatedArticles } from "@/lib/articles";
 import { categorySlugFromLabel } from "@/lib/categorySlug";
@@ -178,38 +179,16 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     .filter(Boolean).length;
   const readingTime = Math.max(1, Math.ceil(words / 220));
   const authorProfile = getAuthorProfile(articleData.author);
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "NewsArticle",
-    headline: articleData.title,
-    image: [articleData.image],
-    datePublished: articleData.publishedAtISO,
-    dateModified: articleData.publishedAtISO,
-    author: [
-      {
-        "@type": "Person",
-        name: articleData.author
-      }
-    ],
-    publisher: {
-      "@type": "Organization",
-      name: SITE_NAME,
-      logo: {
-        "@type": "ImageObject",
-        url: `${getSiteUrl()}/icon.svg`
-      }
-    },
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": articleUrl
-    },
-    articleSection: articleData.category,
-    description: articleData.seoDescription ?? articleData.content[0] ?? articleData.caption
-  };
+  const publisherLogoUrl = `${getSiteUrl()}/icon.svg`;
 
   return (
     <main>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ArticleNewsJsonLd
+        article={articleData}
+        articleUrl={articleUrl}
+        siteName={SITE_NAME}
+        publisherLogoUrl={publisherLogoUrl}
+      />
       <ArticleViewTracker slug={articleData.slug} />
       <Navbar tickerItems={tickerItems} />
       <FloatingShareBar title={articleData.title} url={articleUrl} />
@@ -234,14 +213,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
             <div className="mt-5 flex flex-col gap-3 border-y border-zinc-200 py-3 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:py-4">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
+                <div className="relative aspect-square h-11 w-11 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
                   <Image
                     src={unsplashThumb(authorProfile.photo)}
                     alt=""
                     fill
                     className="object-cover"
                     sizes="44px"
-                    unoptimized
                   />
                 </div>
                 <div className="min-w-0">
@@ -287,19 +265,18 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             </div>
 
             <figure className="mt-6 sm:mt-8">
-              <div className="relative h-[220px] overflow-hidden rounded-xl sm:h-[460px]">
+              <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-zinc-100 sm:aspect-[2/1]">
                 <Image
                   src={unsplashArticle(articleData.image)}
                   alt={articleData.title}
                   fill
                   placeholder="blur"
                   blurDataURL={blurDataURL}
-                  unoptimized
                   priority
                   fetchPriority="high"
                   decoding="async"
                   className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 900px"
                 />
               </div>
               <figcaption className="mt-2 break-words text-sm text-zinc-500">{articleData.caption}</figcaption>
@@ -314,8 +291,18 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 block.type === "text" ? (
                   <p key={`text-${index}`}>{block.text}</p>
                 ) : (
-                  <figure key={`image-${index}`} className="my-8 overflow-hidden rounded-xl border border-zinc-200 bg-white">
-                    <img src={block.url} alt={`Article image ${index + 1}`} className="h-auto w-full object-cover" />
+                  <figure
+                    key={`image-${index}`}
+                    className="relative my-8 aspect-[16/9] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100"
+                  >
+                    <Image
+                      src={articleImageUrl(block.url, imgPreset.articleLead)}
+                      alt={`Article image ${index + 1}`}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 800px"
+                      className="object-cover"
+                      decoding="async"
+                    />
                   </figure>
                 )
               )}
@@ -339,14 +326,13 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
             <div className="mt-8 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
               <div className="flex items-start gap-3">
-                <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
+                <div className="relative aspect-square h-14 w-14 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-zinc-100">
                   <Image
                     src={unsplashThumb(authorProfile.photo)}
                     alt=""
                     fill
                     className="object-cover"
                     sizes="56px"
-                    unoptimized
                   />
                 </div>
                 <div>

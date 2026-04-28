@@ -18,7 +18,7 @@ export function Footer() {
             <Logo compact light />
           </div>
           <h3 className="mb-3 font-serif text-xl font-bold text-white">About</h3>
-          <p className="text-sm leading-6 text-zinc-400">
+          <p className="text-sm leading-6 text-zinc-300">
             {SITE_NAME} delivers sharp journalism, in-depth analysis, and breaking updates that matter to global readers.
           </p>
         </div>
@@ -51,14 +51,14 @@ export function Footer() {
 
         <div>
           <h3 className="mb-3 font-serif text-xl font-bold text-white">Contact Info</h3>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2 text-sm text-zinc-300">
             <li>Editorial Desk: +1 (202) 555-0182</li>
             <li>Email: hello@newtimesreporter.com</li>
             <li>Address: 85 Park Avenue, New York, NY</li>
           </ul>
         </div>
       </div>
-      <div className="border-t border-zinc-800 py-4 text-center text-xs text-zinc-500">
+      <div className="border-t border-zinc-800 py-4 text-center text-xs text-zinc-300">
         Copyright 2026 {SITE_NAME}. All rights reserved.
       </div>
     </footer>

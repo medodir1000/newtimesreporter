@@ -16,6 +16,8 @@ ADMIN_EMAIL=admin@newtimesreporter.com
 ADMIN_PASSWORD=Admin2026@@
 ADMIN_SESSION_SECRET=generate_a_long_random_secret
 SUPABASE_STORAGE_BUCKET=article-images
+# Optional: override Google Tag Manager container (default GTM-5HH4FVFQ). Set to empty to disable.
+# NEXT_PUBLIC_GTM_ID=GTM-5HH4FVFQ
 ```
 
 ## Supabase SQL
@@ -23,6 +25,26 @@ SUPABASE_STORAGE_BUCKET=article-images
 Run `supabase/articles_admin.sql` and `supabase/article_comments.sql` in your Supabase SQL editor.
 
 Also create a public storage bucket named `article-images` (or set `SUPABASE_STORAGE_BUCKET` to your bucket name).
+
+## SEO (Google Search)
+
+After deploy, open [Google Search Console](https://search.google.com/search-console) → add your property → **Sitemaps** → submit `https://YOUR-DOMAIN/sitemap.xml` (same origin as `NEXT_PUBLIC_SITE_URL`). The app also serves `/robots.txt` with a link to that sitemap (`getSitemapUrl()` / default `https://newtimesreporter.com/sitemap.xml`).
+
+### Google Indexing API + sitemap ping (`bot.py`)
+
+When the bot successfully upserts an article, it calls `google_indexer.notify_new_article()`:
+
+1. **Indexing API** — `URL_UPDATED` for the new article URL (requires a **service account JSON** with the Indexing API enabled, and that account added as an **Owner** on the Search Console property).
+2. **Sitemap ping** — GET `https://www.google.com/ping?sitemap=…` and `https://www.bing.com/ping?sitemap=…`.
+
+Set one of:
+
+- `GOOGLE_INDEXING_SA_JSON` — path to the service account JSON file, or  
+- `GOOGLE_APPLICATION_CREDENTIALS` — same (standard Google env).
+
+If unset, indexing is skipped (logged). Install Python deps: `pip install -r requirements.txt` (`google-auth`, `google-auth-httplib2`, `httplib2`).
+
+Use `NEXT_PUBLIC_SITE_URL` (or `OPENROUTER_SITE_URL`) so article URLs and sitemap pings match production (e.g. `https://newtimesreporter.com`).
 
 ## Netlify
 

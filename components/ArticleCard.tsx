@@ -31,7 +31,9 @@ export function ArticleCard({
       className={`group overflow-hidden rounded-xl border border-zinc-200 bg-white`}
     >
       <Link href={href}>
-        <div className={`relative ${large ? "h-56 sm:h-[420px]" : "h-48"}`}>
+        <div
+          className={`relative w-full overflow-hidden bg-zinc-100 ${large ? "aspect-[4/3] sm:aspect-[16/10]" : "aspect-[16/10]"}`}
+        >
           <Image
             src={optimizedSrc}
             alt={title}
@@ -40,12 +42,12 @@ export function ArticleCard({
             blurDataURL={blurDataURL}
             priority={priority}
             fetchPriority={priority ? "high" : "low"}
-            unoptimized
+            loading={priority ? undefined : "lazy"}
             decoding="async"
             sizes={
               large
-                ? "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 720px"
-                : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 320px"
+                ? "(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 800px"
+                : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 360px"
             }
             className="object-cover transition duration-300 group-hover:scale-[1.02]"
           />

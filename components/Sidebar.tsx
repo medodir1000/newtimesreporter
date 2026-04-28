@@ -34,17 +34,17 @@ export function Sidebar({ latestNews, mostRead, trendingNow }: SidebarProps) {
         <div className="space-y-4">
           {latestNews.map((item, index) => (
             <article key={item.slug || `${item.title}-${index}`} className="flex gap-3 border-b border-zinc-100 pb-4 last:border-b-0 last:pb-0">
-              <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded">
+              <div className="relative aspect-[4/3] w-28 shrink-0 overflow-hidden rounded bg-zinc-100">
                 <Image
                   src={unsplashThumb(item.image)}
                   alt={item.title}
                   fill
+                  loading="lazy"
                   placeholder="blur"
                   blurDataURL={blurDataURL}
                   sizes="112px"
-                  unoptimized
                   decoding="async"
-                  fetchPriority={index === 0 ? "auto" : "low"}
+                  fetchPriority="low"
                   className="object-cover"
                 />
               </div>

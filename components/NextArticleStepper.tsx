@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { blurPlaceholderDataURL, unsplashCard } from "@/lib/images";
+import { blurPlaceholderDataURL, unsplashHero } from "@/lib/images";
 
 type StepperArticle = {
   slug: string;
@@ -45,12 +45,14 @@ export function NextArticleStepper({ articles }: NextArticleStepperProps) {
       <Link href={`/article/${current.slug}`} className="mt-3 block overflow-hidden rounded-lg border border-zinc-200">
         <div className="relative aspect-[16/9] w-full bg-zinc-100">
           <Image
-            src={unsplashCard(current.image)}
+            src={unsplashHero(current.image)}
             alt={current.title}
             fill
+            loading="lazy"
+            decoding="async"
             placeholder="blur"
             blurDataURL={blurDataURL}
-            unoptimized
+            fetchPriority="low"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 66vw, 720px"
             className="object-cover transition duration-300 hover:scale-[1.01]"
           />

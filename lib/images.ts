@@ -1,6 +1,13 @@
 /**
- * Unsplash CDN: cap width + quality so bytes stay small.
- * Use with next/image `sizes` so layout still picks a sensible slot.
+ * Image URLs for next/image: Unsplash query params for sizing; Supabase stays on
+ * standard `/storage/v1/object/public/` URLs (free tier — no `/render/image`).
+ * Pair with `sizes` + aspect-ratio wrappers for CLS/LCP.
+ */
+
+const SUPABASE_OBJECT_MARKER = "/storage/v1/object/public/";
+
+/**
+ * Unsplash CDN: cap width + quality.
  */
 export function resizeUnsplash(url: string, width: number, quality = 65) {
   try {
@@ -19,24 +26,58 @@ export function resizeUnsplash(url: string, width: number, quality = 65) {
   }
 }
 
-/** Sidebar thumb ~80px wide → tiny file */
-export const unsplashThumb = (url: string) => resizeUnsplash(url, 200, 52);
-
-/** List rows with slightly larger thumb */
-export const unsplashRow = (url: string) => resizeUnsplash(url, 300, 55);
-
-/** Small article cards in grids */
-export const unsplashCard = (url: string) => resizeUnsplash(url, 520, 58);
-
-/** Home hero / big story (still under 1MB budget) */
-export const unsplashHero = (url: string) => resizeUnsplash(url, 960, 62);
-
-/** Article lead image */
-export const unsplashArticle = (url: string) => resizeUnsplash(url, 1080, 62);
-
 /**
- * Lightweight blurred placeholder for progressive image loading.
+ * Supabase Storage public object URL only (no Image Transformation API on free plan).
+ * Returns the canonical URL string when the path is a public object URL; otherwise null.
  */
+export function supabaseRenderPublicUrl(url: string): string | null {
+  try {
+    const u = new URL(url.trim());
+    if (!u.pathname.includes(SUPABASE_OBJECT_MARKER)) {
+      return null;
+    }
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** Target decode width in CSS pixels (Next `sizes` should match). ~2× for retina capped server-side. */
+export function articleImageUrl(url: string, displayWidthPx: number, quality = 78): string {
+  if (!url?.trim()) return url;
+  const trimmed = url.trim();
+  const decodeW = Math.min(2048, Math.max(64, Math.round(displayWidthPx * 2)));
+
+  try {
+    const host = new URL(trimmed).hostname;
+    if (host === "images.unsplash.com") {
+      const q = Math.min(90, Math.max(45, quality));
+      return resizeUnsplash(trimmed, decodeW, q);
+    }
+    const supabasePublic = supabaseRenderPublicUrl(trimmed);
+    return supabasePublic ?? trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
+/** Presets aligned with common layout slots (decode width basis). */
+export const imgPreset = {
+  thumb: 112,
+  row: 160,
+  listFeatured: 200,
+  card: 360,
+  hero: 720,
+  articleLead: 900
+} as const;
+
+export const unsplashThumb = (url: string) => articleImageUrl(url, imgPreset.thumb);
+export const unsplashRow = (url: string) => articleImageUrl(url, imgPreset.row);
+export const unsplashListFeatured = (url: string) => articleImageUrl(url, imgPreset.listFeatured);
+export const unsplashCard = (url: string) => articleImageUrl(url, imgPreset.card);
+export const unsplashHero = (url: string) => articleImageUrl(url, imgPreset.hero);
+export const unsplashArticle = (url: string) => articleImageUrl(url, imgPreset.articleLead);
+
 export function blurPlaceholderDataURL() {
   const svg = `
     <svg xmlns='http://www.w3.org/2000/svg' width='32' height='20' viewBox='0 0 32 20'>

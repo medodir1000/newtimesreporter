@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { categories } from "@/lib/mockData";
+import { articleImageUrl } from "@/lib/images";
 
 type AdminArticle = {
   id: string | number;
@@ -59,6 +61,23 @@ const fallbackArticleImage =
   "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=1600&q=80";
 
 const authorOptions = ["Arthur Sterling", "Julian Vane", "Eleanor Thorne", "Grant Mitchell", "Clara Whitmore", "Godfrey Benjamin"];
+
+function AdminListCover({ src, title }: { src: string; title: string }) {
+  const [useFallback, setUseFallback] = useState(false);
+  const resolved = useFallback ? fallbackArticleImage : src;
+  return (
+    <div className="relative mt-2 aspect-[2/1] w-full overflow-hidden rounded-md bg-zinc-100">
+      <Image
+        src={articleImageUrl(resolved, 280)}
+        alt={title}
+        fill
+        className="object-cover"
+        sizes="(max-width: 768px) 100vw, 50vw"
+        onError={() => setUseFallback(true)}
+      />
+    </div>
+  );
+}
 
 function slugify(value: string) {
   return value
@@ -603,7 +622,15 @@ export default function AdminPage() {
           {resolvedImageUrl && (
             <div className="md:col-span-2">
               <p className="mb-2 text-xs text-zinc-500">Image preview</p>
-              <img src={resolvedImageUrl} alt="Article preview" className="h-40 w-full rounded-md border border-zinc-200 object-cover md:w-80" />
+              <div className="relative aspect-[2/1] w-full max-w-md overflow-hidden rounded-md border border-zinc-200 bg-zinc-100">
+                <Image
+                  src={articleImageUrl(resolvedImageUrl, 400)}
+                  alt="Article preview"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 448px"
+                />
+              </div>
             </div>
           )}
         </form>
@@ -658,13 +685,9 @@ export default function AdminPage() {
               </div>
               <h3 className="mt-1 font-semibold text-zinc-900">{item.title}</h3>
               <p className="text-xs text-zinc-500">/{item.slug}</p>
-              <img
+              <AdminListCover
                 src={previewImageBySlug[item.slug] || item.image_url?.trim() || fallbackArticleImage}
-                alt={item.title}
-                onError={(event) => {
-                  event.currentTarget.src = fallbackArticleImage;
-                }}
-                className="mt-2 h-24 w-full rounded-md object-cover"
+                title={item.title}
               />
               <div className="mt-2 flex gap-2">
                 <button

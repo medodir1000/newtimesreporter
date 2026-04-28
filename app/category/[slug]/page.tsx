@@ -54,19 +54,19 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             {categoryArticles.map((article, index) => (
               <article key={article.slug} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
                 <Link href={`/article/${article.slug}`}>
-                  <div className="relative h-52">
+                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-100">
                     <Image
                       src={unsplashCard(article.image)}
                       alt={article.title}
                       fill
                       placeholder="blur"
                       blurDataURL={blurDataURL}
-                      unoptimized
                       priority={index === 0}
                       fetchPriority={index === 0 ? "high" : "low"}
+                      loading={index === 0 ? undefined : "lazy"}
                       decoding="async"
                       className="object-cover"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 340px"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 360px"
                     />
                   </div>
                   <div className="p-5">

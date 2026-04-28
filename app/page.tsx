@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ArticleCard } from "@/components/ArticleCard";
 import { AdSenseUnit } from "@/components/AdSenseUnit";
 import { Footer } from "@/components/Footer";
@@ -23,8 +24,8 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
-/** Supabase/PostgREST commonly allows up to ~1000 rows per request. */
-const HOME_FEED_LIMIT = 1000;
+/** Cap homepage rows so the browser is not flooded with hundreds of parallel image requests. */
+const HOME_FEED_LIMIT = 180;
 
 export default async function HomePage() {
   const homepageArticles = await getHomepageArticles(HOME_FEED_LIMIT);
@@ -163,18 +164,6 @@ export default async function HomePage() {
 
       <section className="mx-auto grid max-w-7xl gap-5 px-3 py-5 sm:px-5 sm:py-8 lg:grid-cols-3 lg:gap-8 lg:px-8 lg:py-10">
         <div className="flex flex-col gap-8 sm:gap-10 lg:col-span-2">
-          <div>
-            <div className="mb-4 flex items-end justify-between border-b-2 border-news-black pb-2">
-              <h2 className="font-serif text-xl font-bold tracking-tight text-news-black sm:text-2xl">Must Read</h2>
-              <span className="text-xs font-semibold uppercase tracking-wider text-news-red">Today</span>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {mustRead.map((article) => (
-                <MustReadCard key={article.slug} article={article} />
-              ))}
-            </div>
-          </div>
-
           <ArticleCard
             category={heroStory.category}
             title={heroStory.title}
@@ -185,6 +174,18 @@ export default async function HomePage() {
             large
             priority
           />
+
+          <div>
+            <div className="mb-4 flex items-end justify-between border-b-2 border-news-black pb-2">
+              <h2 className="font-serif text-xl font-bold tracking-tight text-news-black sm:text-2xl">Must Read</h2>
+              <span className="text-xs font-semibold uppercase tracking-wider text-news-red">Today</span>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {mustRead.map((article, index) => (
+                <MustReadCard key={article.slug} article={article} highPriority={index < 2} />
+              ))}
+            </div>
+          </div>
 
           <NextArticleStepper articles={nextArticleCandidates} />
 
@@ -300,12 +301,13 @@ export default async function HomePage() {
                   <section key={section.slug} className="rounded-xl border border-zinc-200 bg-white p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <h3 className="font-serif text-lg font-bold text-news-black">{section.label}</h3>
-                      <a
+                      <Link
                         href={`/category/${section.slug}`}
                         className="text-xs font-semibold uppercase tracking-wide text-news-red hover:underline"
+                        aria-label={`View all ${section.label} news`}
                       >
                         View all
-                      </a>
+                      </Link>
                     </div>
                     <div className="space-y-3">
                       {section.items.map((item) => (

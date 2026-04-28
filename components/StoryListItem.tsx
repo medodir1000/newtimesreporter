@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { blurPlaceholderDataURL, unsplashCard, unsplashRow, unsplashThumb } from "@/lib/images";
+import { blurPlaceholderDataURL, unsplashListFeatured, unsplashRow, unsplashThumb } from "@/lib/images";
 
 type StoryListItemProps = {
   slug: string;
@@ -25,9 +25,8 @@ export function StoryListItem({
   const blurDataURL = blurPlaceholderDataURL();
 
   const tight = compact && !featuredThumb;
-  const src = featuredThumb ? unsplashCard(image) : tight ? unsplashThumb(image) : unsplashRow(image);
+  const src = featuredThumb ? unsplashListFeatured(image) : tight ? unsplashThumb(image) : unsplashRow(image);
   const w = tight ? 88 : 108;
-  const h = tight ? 64 : 78;
 
   const titleClass = featuredThumb
     ? "mt-1 text-sm font-semibold leading-snug text-news-black hover:text-news-red sm:text-base"
@@ -44,18 +43,19 @@ export function StoryListItem({
         className={
           featuredThumb
             ? "relative aspect-[4/3] w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-100 sm:w-32 md:w-36"
-            : "relative shrink-0 overflow-hidden rounded bg-zinc-100"
+            : `relative aspect-[4/3] shrink-0 overflow-hidden rounded bg-zinc-100 ${tight ? "w-[88px]" : "w-[108px]"}`
         }
-        style={featuredThumb ? undefined : { width: w, height: h }}
         aria-label={title}
       >
         <Image
           src={src}
           alt=""
           fill
-          unoptimized
+          loading="lazy"
+          decoding="async"
           placeholder="blur"
           blurDataURL={blurDataURL}
+          fetchPriority="low"
           sizes={featuredThumb ? "(max-width: 640px) 112px, (max-width: 768px) 128px, 144px" : `${w}px`}
           className="object-cover"
         />

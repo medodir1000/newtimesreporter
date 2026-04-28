@@ -15,7 +15,13 @@ function deck(article: Article) {
   return raw.length > 140 ? `${raw.slice(0, 137)}…` : raw;
 }
 
-export function MustReadCard({ article }: { article: Article }) {
+type MustReadCardProps = {
+  article: Article;
+  /** First above-the-fold cards: eager + high fetch priority for LCP. */
+  highPriority?: boolean;
+};
+
+export function MustReadCard({ article, highPriority = false }: MustReadCardProps) {
   const blurDataURL = blurPlaceholderDataURL();
 
   return (
@@ -26,9 +32,12 @@ export function MustReadCard({ article }: { article: Article }) {
             src={unsplashCard(article.image)}
             alt={article.title}
             fill
+            priority={highPriority}
+            loading={highPriority ? undefined : "lazy"}
+            decoding="async"
             placeholder="blur"
             blurDataURL={blurDataURL}
-            unoptimized
+            fetchPriority={highPriority ? "high" : "low"}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition duration-300 group-hover:opacity-95"
           />

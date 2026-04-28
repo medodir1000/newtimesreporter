@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Merriweather } from "next/font/google";
 import { AdSenseScript } from "@/components/AdSenseScript";
+import { GoogleTagManager } from "@/components/GoogleTagManager";
 import { SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${merriweather.variable}`}>
       <body>
+        <GoogleTagManager />
         <AdSenseScript />
         {children}
       </body>

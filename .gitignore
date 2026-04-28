@@ -30,3 +30,8 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 __pycache__/
+
+# Google service account keys (Indexing API); never commit
+**/service-account.json
+# Local duplicate / credentials folder (use repo-root scripts + env)
+bot/

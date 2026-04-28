@@ -107,7 +107,7 @@ export function ArticleComments({ slug }: ArticleCommentsProps) {
             required
             autoComplete="name"
             className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-news-red/30 focus:border-news-red focus:ring-2"
-            placeholder="e.g. Samira"
+            placeholder="e.g. John"
           />
         </div>
         <div>

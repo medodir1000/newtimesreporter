@@ -6,6 +6,11 @@ export function getSiteUrl(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://newtimesreporter.com").replace(/\/$/, "");
 }
 
+/** Absolute sitemap URL (Search Console / pings). */
+export function getSitemapUrl(): string {
+  return `${getSiteUrl()}/sitemap.xml`;
+}
+
 /** Default byline when the database has no author. */
 export const DEFAULT_ARTICLE_AUTHOR = "New Time Reporter";
 
