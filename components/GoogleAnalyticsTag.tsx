@@ -1,7 +1,7 @@
 import Script from "next/script";
 
 function resolveGaMeasurementId(): string | null {
-  const raw = (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-YWMMPX0CNR").trim();
+  const raw = (process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-10WN9XFFCC").trim();
   if (!raw) return null;
   return /^G-[A-Z0-9]+$/.test(raw) ? raw : null;
 }
