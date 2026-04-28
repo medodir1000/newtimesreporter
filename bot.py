@@ -12,8 +12,8 @@ try:
     from dotenv import load_dotenv
 
     _repo_root = os.path.dirname(os.path.abspath(__file__))
-    load_dotenv(os.path.join(_repo_root, ".env.local"))
-    load_dotenv(os.path.join(_repo_root, ".env"))
+    load_dotenv(os.path.join(_repo_root, ".env.local"), interpolate=False)
+    load_dotenv(os.path.join(_repo_root, ".env"), interpolate=False)
 except ImportError:
     pass
 

@@ -299,9 +299,12 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                       src={articleImageUrl(block.url, imgPreset.articleLead)}
                       alt={`Article image ${index + 1}`}
                       fill
-                      sizes="(max-width: 1024px) 100vw, 800px"
-                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
+                      placeholder="blur"
+                      blurDataURL={blurDataURL}
+                      loading="lazy"
                       decoding="async"
+                      className="object-cover"
                     />
                   </figure>
                 )

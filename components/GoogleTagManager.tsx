@@ -7,12 +7,19 @@ function resolveGtmId(): string | null {
 }
 
 /**
- * Google Tag Manager — head script (beforeInteractive → injected early) + body noscript fallback.
+ * Google Tag Manager — afterInteractive (default third-party timing) to avoid blocking LCP.
+ * For earliest possible tags, set NEXT_PUBLIC_GTM_STRATEGY=beforeInteractive (hurts Lighthouse).
  * Override with NEXT_PUBLIC_GTM_ID; set empty to disable.
  */
 export function GoogleTagManager() {
   const gtmId = resolveGtmId();
   if (!gtmId) return null;
+
+  const strategyEnv = (process.env.NEXT_PUBLIC_GTM_STRATEGY ?? "afterInteractive").trim();
+  const strategy =
+    strategyEnv === "beforeInteractive" || strategyEnv === "afterInteractive" || strategyEnv === "lazyOnload"
+      ? strategyEnv
+      : "afterInteractive";
 
   const inlineScript = `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
 new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
@@ -22,7 +29,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
   return (
     <>
-      <Script id="google-tag-manager" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: inlineScript }} />
+      <Script id="google-tag-manager" strategy={strategy} dangerouslySetInnerHTML={{ __html: inlineScript }} />
       <noscript>
         <iframe
           src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}

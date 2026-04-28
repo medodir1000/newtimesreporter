@@ -26,9 +26,7 @@ function supabaseStorageImagePatterns() {
 
 /**
  * Security headers (Best Practices / hardening).
- * CSP: do not add a blanket policy here without nonces — it will break GTM (`beforeInteractive`),
- * AdSense, and inline bootstraps. Use `middleware.ts` with `nonce()` from Next or a host-level
- * edge config once you have an allowlist (script-src for googletagmanager.com, pagead2.googlesyndication.com, etc.).
+ * CSP: do not add a blanket policy here without nonces — it can break GTM, AdSense, and inline bootstraps.
  */
 function securityHeaders() {
   /** @type {{ key: string; value: string }[]} */
@@ -55,9 +53,16 @@ function securityHeaders() {
 // Images: keep remotePatterns for Unsplash + Supabase; leave `images.unoptimized` unset (false)
 // so Netlify’s Next runtime can route through Netlify Image CDN / built-in optimization.
 
+const cacheImmutable = [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }];
+const cacheShort = [{ key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" }];
+
 const nextConfig = {
   async headers() {
     return [
+      { source: "/icon.svg", headers: cacheImmutable },
+      { source: "/favicon.ico", headers: cacheImmutable },
+      { source: "/robots.txt", headers: cacheShort },
+      { source: "/sitemap.xml", headers: cacheShort },
       {
         source: "/:path*",
         headers: securityHeaders()

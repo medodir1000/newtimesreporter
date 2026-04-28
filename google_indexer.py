@@ -29,7 +29,16 @@ def _service_account_json_path() -> str | None:
     if not path:
         return None
     path = path.strip().strip('"')
-    return path if os.path.isfile(path) else None
+    if not os.path.isfile(path):
+        extra = ""
+        if any(c in path for c in "\n\r\x08"):
+            extra = (
+                " Path looks mangled by escape sequences (\\n, \\b, …) — use forward slashes in .env.local "
+                "or PowerShell single-quoted paths."
+            )
+        logger.warning("Indexing API: JSON file missing or invalid path: %r.%s", path, extra)
+        return None
+    return path
 
 
 def publish_url(url: str) -> bool:
@@ -39,7 +48,10 @@ def publish_url(url: str) -> bool:
     """
     path = _service_account_json_path()
     if not path:
-        logger.info("Indexing API: skip (set GOOGLE_INDEXING_SA_JSON or GOOGLE_APPLICATION_CREDENTIALS to JSON path)")
+        logger.info(
+            "Indexing API: skip — set GOOGLE_INDEXING_SA_JSON or GOOGLE_APPLICATION_CREDENTIALS "
+            "to an absolute path of the service account JSON (add in .env.local at repo root)."
+        )
         return False
 
     creds = service_account.Credentials.from_service_account_file(path, scopes=INDEXING_SCOPE)

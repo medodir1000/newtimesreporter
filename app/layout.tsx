@@ -9,7 +9,8 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: "swap",
-  adjustFontFallback: true
+  adjustFontFallback: true,
+  preload: true
 });
 
 const merriweather = Merriweather({
@@ -17,7 +18,8 @@ const merriweather = Merriweather({
   variable: "--font-merriweather",
   weight: ["400", "700"],
   display: "swap",
-  adjustFontFallback: true
+  adjustFontFallback: true,
+  preload: false
 });
 
 export const metadata: Metadata = {

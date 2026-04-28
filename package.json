@@ -2,11 +2,17 @@
   "name": "newtimesreporter",
   "version": "0.1.0",
   "private": true,
+  "browserslist": [
+    "chrome >= 92",
+    "edge >= 92",
+    "firefox >= 90",
+    "safari >= 15.4"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
