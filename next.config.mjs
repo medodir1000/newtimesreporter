@@ -3,24 +3,32 @@
 function supabaseStorageImagePatterns() {
   /** @type {import('next').RemotePattern[]} */
   const patterns = [];
-  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (raw) {
+  const urls = [process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_URL].filter(Boolean);
+  const hostnames = new Set();
+
+  for (const raw of urls) {
     try {
-      const host = new URL(raw).hostname;
-      patterns.push({
-        protocol: "https",
-        hostname: host,
-        pathname: "/storage/**"
-      });
+      hostnames.add(new URL(raw).hostname);
     } catch {
-      /* ignore */
+      /* ignore invalid env value */
     }
   }
-  patterns.push({
-    protocol: "https",
-    hostname: "*.supabase.co",
-    pathname: "/storage/**"
-  });
+
+  // Wildcard host fallback for preview/dev buckets.
+  hostnames.add("**.supabase.co");
+
+  for (const hostname of hostnames) {
+    patterns.push({
+      protocol: "https",
+      hostname,
+      pathname: "/storage/v1/object/public/**"
+    });
+    patterns.push({
+      protocol: "https",
+      hostname,
+      pathname: "/storage/**"
+    });
+  }
   return patterns;
 }
 

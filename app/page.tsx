@@ -54,10 +54,15 @@ export default async function HomePage() {
     slug: item.slug,
     category: item.category,
     title: item.title,
+    image: item.image,
     time: `${Math.max(3, Math.ceil(item.content.join(" ").split(/\s+/).filter(Boolean).length / 220))} min read`
   }));
 
-  const mostRead = pool.slice(0, 5).map((item) => item.title);
+  const mostRead = pool.slice(0, 5).map((item) => ({
+    slug: item.slug,
+    title: item.title,
+    image: item.image
+  }));
 
   if (!heroStory) {
     return (
@@ -163,7 +168,7 @@ export default async function HomePage() {
     <main>
       <Navbar tickerItems={tickerItems} />
 
-      <section className="mx-auto grid max-w-7xl gap-5 px-3 py-5 sm:px-5 sm:py-8 lg:grid-cols-3 lg:gap-8 lg:px-8 lg:py-10">
+      <section className="mx-auto grid max-w-[86rem] gap-4 px-3 py-4 sm:px-5 sm:py-6 lg:grid-cols-3 lg:gap-7 lg:px-6 lg:py-8">
         <div className="flex flex-col gap-8 sm:gap-10 lg:col-span-2">
           <ArticleCard
             category={heroStory.category}

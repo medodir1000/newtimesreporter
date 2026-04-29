@@ -15,12 +15,19 @@ type TrendingItem = {
   slug: string;
   category: string;
   title: string;
+  image: string;
   time: string;
+};
+
+type MostReadItem = {
+  slug: string;
+  title: string;
+  image: string;
 };
 
 type SidebarProps = {
   latestNews: LatestNewsItem[];
-  mostRead: string[];
+  mostRead: MostReadItem[];
   trendingNow: TrendingItem[];
 };
 
@@ -28,7 +35,7 @@ export function Sidebar({ latestNews, mostRead, trendingNow }: SidebarProps) {
   const blurDataURL = blurPlaceholderDataURL();
 
   return (
-    <aside className="space-y-5 sm:space-y-8">
+    <aside className="space-y-5 sm:space-y-8 lg:sticky lg:top-20">
       <section className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
         <h2 className="mb-4 text-xl font-bold text-news-black">Latest News</h2>
         <div className="space-y-4">
@@ -68,9 +75,25 @@ export function Sidebar({ latestNews, mostRead, trendingNow }: SidebarProps) {
         <h2 className="mb-4 text-xl font-bold text-news-black">Most Read</h2>
         <ol className="space-y-3">
           {mostRead.map((item, index) => (
-            <li key={`${item}-${index}`} className="flex gap-3">
-              <span className="w-5 font-serif text-xl font-bold text-news-red">{index + 1}</span>
-              <span className="text-sm font-semibold text-zinc-800">{item}</span>
+            <li key={`${item.slug}-${index}`} className="flex items-start gap-3">
+              <span className="w-5 pt-0.5 font-serif text-xl font-bold text-news-red">{index + 1}</span>
+              <div className="relative mt-0.5 aspect-[4/3] w-20 shrink-0 overflow-hidden rounded bg-zinc-100">
+                <Image
+                  src={unsplashThumb(item.image)}
+                  alt=""
+                  fill
+                  loading="lazy"
+                  placeholder="blur"
+                  blurDataURL={blurDataURL}
+                  sizes="80px"
+                  decoding="async"
+                  fetchPriority="low"
+                  className="object-cover"
+                />
+              </div>
+              <Link href={`/article/${item.slug}`} className="text-sm font-semibold leading-snug text-zinc-800 hover:text-news-red">
+                {item.title}
+              </Link>
             </li>
           ))}
         </ol>
@@ -80,14 +103,30 @@ export function Sidebar({ latestNews, mostRead, trendingNow }: SidebarProps) {
         <h2 className="mb-4 text-xl font-bold text-news-black">Trending Now</h2>
         <div className="space-y-4">
           {trendingNow.map((item, index) => (
-            <article key={item.slug || `${item.title}-${index}`}>
-              <span className="inline-block bg-news-red/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-news-red">
-                {item.category}
-              </span>
-              <Link href={`/article/${item.slug}`} className="mt-2 block text-sm font-semibold leading-snug text-zinc-800 hover:text-news-red">
-                {item.title}
-              </Link>
-              <p className="mt-1 text-xs text-zinc-500">{item.time}</p>
+            <article key={item.slug || `${item.title}-${index}`} className="flex gap-3">
+              <div className="relative mt-0.5 aspect-[4/3] w-20 shrink-0 overflow-hidden rounded bg-zinc-100">
+                <Image
+                  src={unsplashThumb(item.image)}
+                  alt={item.title}
+                  fill
+                  loading="lazy"
+                  placeholder="blur"
+                  blurDataURL={blurDataURL}
+                  sizes="80px"
+                  decoding="async"
+                  fetchPriority="low"
+                  className="object-cover"
+                />
+              </div>
+              <div>
+                <span className="inline-block bg-news-red/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-news-red">
+                  {item.category}
+                </span>
+                <Link href={`/article/${item.slug}`} className="mt-2 block text-sm font-semibold leading-snug text-zinc-800 hover:text-news-red">
+                  {item.title}
+                </Link>
+                <p className="mt-1 text-xs text-zinc-500">{item.time}</p>
+              </div>
             </article>
           ))}
         </div>

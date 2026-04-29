@@ -32,6 +32,7 @@ a {
 /* Breaking news ticker — CSS only (no JS animation library) */
 .ntr-ticker {
   overflow: hidden;
+  min-height: 1.25rem;
 }
 
 .ntr-ticker-track {

@@ -42,6 +42,15 @@ export function supabaseRenderPublicUrl(url: string): string | null {
   }
 }
 
+export function isSupabasePublicImageUrl(url: string): boolean {
+  try {
+    const u = new URL(url.trim());
+    return u.hostname.endsWith(".supabase.co") && u.pathname.includes(SUPABASE_OBJECT_MARKER);
+  } catch {
+    return false;
+  }
+}
+
 /** Target decode width in CSS pixels (Next `sizes` should match). ~2× for retina capped server-side. */
 export function articleImageUrl(url: string, displayWidthPx: number, quality = 78): string {
   if (!url?.trim()) return url;

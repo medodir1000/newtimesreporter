@@ -13,7 +13,14 @@ import { FloatingShareBar } from "@/components/FloatingShareBar";
 import { MustReadCard } from "@/components/MustReadCard";
 import { Navbar } from "@/components/Navbar";
 import { Sidebar } from "@/components/Sidebar";
-import { articleImageUrl, blurPlaceholderDataURL, imgPreset, unsplashArticle, unsplashThumb } from "@/lib/images";
+import {
+  articleImageUrl,
+  blurPlaceholderDataURL,
+  imgPreset,
+  isSupabasePublicImageUrl,
+  unsplashArticle,
+  unsplashThumb
+} from "@/lib/images";
 import { getAuthorProfile } from "@/lib/authors";
 import { getArticleBySlug, getHomepageArticles, getRelatedArticles } from "@/lib/articles";
 import { categorySlugFromLabel } from "@/lib/categorySlug";
@@ -75,14 +82,21 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     image: item.image,
     time: item.date
   }));
-  const mostRead = sidebarPool.slice(0, 5).map((item) => item.title);
+  const mostRead = sidebarPool.slice(0, 5).map((item) => ({
+    slug: item.slug,
+    title: item.title,
+    image: item.image
+  }));
   const trendingNow = sidebarPool.slice(0, 3).map((item) => ({
     slug: item.slug,
     category: item.category,
     title: item.title,
+    image: item.image,
     time: `${Math.max(3, Math.ceil(item.content.join(" ").split(/\s+/).filter(Boolean).length / 220))} min read`
   }));
   const blurDataURL = blurPlaceholderDataURL();
+  const heroImageSrc = unsplashArticle(articleData.image);
+  const bypassHeroOptimizer = isSupabasePublicImageUrl(heroImageSrc);
 
   if (!articleData) {
     notFound();
@@ -193,7 +207,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       <Navbar tickerItems={tickerItems} />
       <FloatingShareBar title={articleData.title} url={articleUrl} />
 
-      <section className="mx-auto max-w-7xl px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <section className="mx-auto max-w-[86rem] px-3 py-5 sm:px-5 sm:py-7 lg:px-6">
         <nav className="mb-5 truncate text-xs text-zinc-500 sm:mb-6 sm:text-sm">
           <Link href="/" className="hover:text-news-red">
             Home
@@ -267,11 +281,12 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             <figure className="mt-6 sm:mt-8">
               <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl bg-zinc-100 sm:aspect-[2/1]">
                 <Image
-                  src={unsplashArticle(articleData.image)}
+                  src={heroImageSrc}
                   alt={articleData.title}
                   fill
                   placeholder="blur"
                   blurDataURL={blurDataURL}
+                  unoptimized={bypassHeroOptimizer}
                   priority
                   fetchPriority="high"
                   decoding="async"
@@ -291,22 +306,29 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                 block.type === "text" ? (
                   <p key={`text-${index}`}>{block.text}</p>
                 ) : (
+                  (() => {
+                    const inlineImageSrc = articleImageUrl(block.url, imgPreset.articleLead);
+                    const bypassInlineOptimizer = isSupabasePublicImageUrl(inlineImageSrc);
+                    return (
                   <figure
                     key={`image-${index}`}
                     className="relative my-8 aspect-[16/9] w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100"
                   >
                     <Image
-                      src={articleImageUrl(block.url, imgPreset.articleLead)}
+                      src={inlineImageSrc}
                       alt={`Article image ${index + 1}`}
                       fill
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 800px"
                       placeholder="blur"
                       blurDataURL={blurDataURL}
+                      unoptimized={bypassInlineOptimizer}
                       loading="lazy"
                       decoding="async"
                       className="object-cover"
                     />
                   </figure>
+                    );
+                  })()
                 )
               )}
             </div>

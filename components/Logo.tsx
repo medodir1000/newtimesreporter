@@ -19,18 +19,18 @@ export function Logo({ compact = false, light = false }: LogoProps) {
   const secondaryText = light ? "text-red-300" : "text-news-red";
 
   return (
-    <Link href="/" className="inline-flex items-center gap-2 sm:gap-3" aria-label={SITE_NAME}>
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-news-red text-white sm:h-10 sm:w-10">
+    <Link href="/" className="inline-flex min-w-0 items-center gap-2 sm:gap-3" aria-label={SITE_NAME}>
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-news-red text-white sm:h-10 sm:w-10">
         <LogoMark />
       </span>
-      <span className="leading-tight">
+      <span className="min-w-0 leading-tight">
         <span
-          className={`block font-serif font-bold tracking-[0.12em] sm:tracking-[0.16em] ${primaryText} ${compact ? "text-lg" : "text-lg sm:text-2xl lg:text-4xl"}`}
+          className={`block truncate font-serif font-bold tracking-[0.08em] sm:tracking-[0.14em] ${primaryText} ${compact ? "text-base" : "text-[0.98rem] sm:text-2xl lg:text-4xl"}`}
         >
           NEW TIMES
         </span>
         <span
-          className={`block font-sans font-semibold uppercase tracking-[0.18em] sm:tracking-[0.28em] ${secondaryText} ${compact ? "text-[10px]" : "text-[10px] sm:text-xs"}`}
+          className={`block truncate font-sans font-semibold uppercase tracking-[0.14em] sm:tracking-[0.28em] ${secondaryText} ${compact ? "text-[9px]" : "text-[9px] sm:text-xs"}`}
         >
           REPORTER
         </span>

@@ -31,6 +31,10 @@ export function AdSenseUnit({
   className,
   style
 }: AdSenseUnitProps) {
+  const minHeight =
+    style?.minHeight ??
+    (adFormat === "fluid" ? 140 : adFormat === "autorelaxed" ? 180 : 120);
+
   useEffect(() => {
     try {
       (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -42,7 +46,7 @@ export function AdSenseUnit({
   return (
     <ins
       className={`adsbygoogle ${className ?? ""}`}
-      style={{ display: "block", ...style }}
+      style={{ display: "block", minHeight, ...style }}
       data-ad-client={adClient}
       data-ad-slot={adSlot}
       data-ad-format={adFormat}

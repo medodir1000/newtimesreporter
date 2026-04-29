@@ -16,6 +16,29 @@ type TickerApiResponse = {
   items?: string[];
 };
 
+const socialLinks = [
+  {
+    Icon: Facebook,
+    href: "https://www.facebook.com/profile.php?id=61588801507310",
+    label: "Facebook"
+  },
+  {
+    Icon: Twitter,
+    href: "#",
+    label: "X"
+  },
+  {
+    Icon: Linkedin,
+    href: "#",
+    label: "LinkedIn"
+  },
+  {
+    Icon: Instagram,
+    href: "#",
+    label: "Instagram"
+  }
+];
+
 const fetcher = async (url: string): Promise<TickerApiResponse> => {
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) {
@@ -36,7 +59,7 @@ export function Navbar({ tickerItems }: NavbarProps) {
   return (
     <header className="border-b border-zinc-200">
       <div className="bg-news-black">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-2 sm:gap-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[86rem] items-center justify-between gap-3 px-3 py-1.5 sm:gap-4 sm:px-6 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <span className="shrink-0 bg-news-red px-2 py-1 text-xs font-semibold uppercase tracking-wider text-white">
               Latest News
@@ -46,12 +69,14 @@ export function Navbar({ tickerItems }: NavbarProps) {
             </div>
           </div>
           <div className="hidden items-center gap-3 text-zinc-200 sm:flex">
-            {[Facebook, Twitter, Linkedin, Instagram].map((Icon, index) => (
+            {socialLinks.map(({ Icon, href, label }) => (
               <a
-                key={index}
-                href="#"
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-full p-1.5 transition-transform hover:-translate-y-0.5 hover:bg-zinc-800"
-                aria-label="social link"
+                aria-label={label}
               >
                 <Icon size={16} />
               </a>
@@ -60,8 +85,8 @@ export function Navbar({ tickerItems }: NavbarProps) {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-6 lg:px-8">
-        <div className="mb-3 flex items-center justify-between sm:mb-4">
+      <div className="mx-auto max-w-[86rem] px-3 py-2.5 sm:px-6 sm:py-4 lg:px-6">
+        <div className="mb-2.5 flex items-center justify-between sm:mb-3">
           <Logo />
           <button
             type="button"
@@ -72,7 +97,7 @@ export function Navbar({ tickerItems }: NavbarProps) {
             {openMenu ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
-        <div className="hidden items-center justify-between border-t border-zinc-200 pt-4 lg:flex">
+        <div className="hidden items-center justify-between border-t border-zinc-200 pt-3 lg:flex">
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold uppercase tracking-wide text-zinc-700">
             <Link href="/" className="hover:text-news-red">
               Home
@@ -114,8 +139,15 @@ export function Navbar({ tickerItems }: NavbarProps) {
             </nav>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-zinc-600">
-                {[Facebook, Twitter, Linkedin, Instagram].map((Icon, index) => (
-                  <a key={index} href="#" className="rounded-full border border-zinc-300 p-2 hover:border-news-red hover:text-news-red" aria-label="social link">
+                {socialLinks.map(({ Icon, href, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full border border-zinc-300 p-2 hover:border-news-red hover:text-news-red"
+                    aria-label={label}
+                  >
                     <Icon size={14} />
                   </a>
                 ))}

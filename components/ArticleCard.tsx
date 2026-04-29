@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { blurPlaceholderDataURL, unsplashCard, unsplashHero } from "@/lib/images";
+import { blurPlaceholderDataURL, isSupabasePublicImageUrl, unsplashCard, unsplashHero } from "@/lib/images";
 
 type ArticleCardProps = {
   category: string;
@@ -25,6 +25,7 @@ export function ArticleCard({
 }: ArticleCardProps) {
   const optimizedSrc = large ? unsplashHero(image) : unsplashCard(image);
   const blurDataURL = blurPlaceholderDataURL();
+  const shouldBypassOptimizer = isSupabasePublicImageUrl(optimizedSrc);
 
   return (
     <article
@@ -40,6 +41,7 @@ export function ArticleCard({
             fill
             placeholder="blur"
             blurDataURL={blurDataURL}
+            unoptimized={shouldBypassOptimizer}
             priority={priority}
             fetchPriority={priority ? "high" : "low"}
             loading={priority ? undefined : "lazy"}

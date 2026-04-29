@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { categories } from "@/lib/mockData";
-import { articleImageUrl } from "@/lib/images";
+import { articleImageUrl, isSupabasePublicImageUrl } from "@/lib/images";
 
 type AdminArticle = {
   id: string | number;
@@ -65,14 +65,17 @@ const authorOptions = ["Arthur Sterling", "Julian Vane", "Eleanor Thorne", "Gran
 function AdminListCover({ src, title }: { src: string; title: string }) {
   const [useFallback, setUseFallback] = useState(false);
   const resolved = useFallback ? fallbackArticleImage : src;
+  const optimizedSrc = articleImageUrl(resolved, 280);
+  const shouldBypassOptimizer = isSupabasePublicImageUrl(optimizedSrc);
   return (
     <div className="relative mt-2 aspect-[2/1] w-full overflow-hidden rounded-md bg-zinc-100">
       <Image
-        src={articleImageUrl(resolved, 280)}
+        src={optimizedSrc}
         alt={title}
         fill
         className="object-cover"
         sizes="(max-width: 768px) 100vw, 50vw"
+        unoptimized={shouldBypassOptimizer}
         onError={() => setUseFallback(true)}
       />
     </div>
@@ -167,6 +170,8 @@ export default function AdminPage() {
 
   const canSubmit = useMemo(() => Boolean(form.title.trim() && form.slug.trim()), [form.slug, form.title]);
   const resolvedImageUrl = form.image_url.trim() || previewImageBySlug[form.slug.trim()] || (editingSlug ? previewImageBySlug[editingSlug] ?? "" : "");
+  const formPreviewSrc = resolvedImageUrl ? articleImageUrl(resolvedImageUrl, 400) : "";
+  const bypassFormPreviewOptimizer = formPreviewSrc ? isSupabasePublicImageUrl(formPreviewSrc) : false;
   const analyticsBySlug = useMemo(() => {
     const map = new Map<string, { views: number; topCountry: string }>();
     analytics.byArticle.forEach((item) => {
@@ -624,11 +629,12 @@ export default function AdminPage() {
               <p className="mb-2 text-xs text-zinc-500">Image preview</p>
               <div className="relative aspect-[2/1] w-full max-w-md overflow-hidden rounded-md border border-zinc-200 bg-zinc-100">
                 <Image
-                  src={articleImageUrl(resolvedImageUrl, 400)}
+                  src={formPreviewSrc}
                   alt="Article preview"
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 448px"
+                  unoptimized={bypassFormPreviewOptimizer}
                 />
               </div>
             </div>
